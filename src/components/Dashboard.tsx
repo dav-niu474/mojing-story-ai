@@ -11,14 +11,18 @@ import {
   PenTool,
   Plus,
   ArrowRight,
-  TrendingUp,
   Target,
+  ListTree,
+  Lightbulb,
+  CheckCircle2,
+  Circle,
+  Loader2,
 } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { api } from '@/lib/api'
 import { getModelById } from '@/lib/models'
 import { ModelSelector } from '@/components/ModelSelector'
-import type { NovelProject, Chapter } from '@/lib/types'
+import type { NovelProject, Chapter, PipelineStepStatus } from '@/lib/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -38,7 +42,16 @@ const CHAPTER_STATUS_MAP: Record<string, { label: string; color: string }> = {
   drafting: { label: '草稿中', color: 'bg-amber-100 text-amber-700' },
   revision: { label: '修订中', color: 'bg-orange-100 text-orange-700' },
   complete: { label: '已完成', color: 'bg-emerald-100 text-emerald-700' },
+  written: { label: '已完成', color: 'bg-emerald-100 text-emerald-700' },
+  polished: { label: '已润色', color: 'bg-sky-100 text-sky-700' },
 }
+
+const PIPELINE_OVERVIEW = [
+  { key: 'concept', label: '创意概念', icon: Lightbulb, color: 'text-amber-500' },
+  { key: 'worldbuilding', label: '世界观', icon: Globe, color: 'text-violet-500' },
+  { key: 'outline', label: '大纲', icon: ListTree, color: 'text-emerald-500' },
+  { key: 'writing', label: '写作', icon: PenTool, color: 'text-orange-500' },
+]
 
 function formatNumber(n: number): string {
   if (n >= 10000) return (n / 10000).toFixed(1) + '万'
@@ -67,6 +80,7 @@ export function Dashboard() {
 
   const [recentChapters, setRecentChapters] = useState<Chapter[]>([])
   const [loading, setLoading] = useState(true)
+  const [pipelineStatus, setPipelineStatus] = useState<Record<string, PipelineStepStatus>>({})
 
   const project = currentProject
 
@@ -97,6 +111,15 @@ export function Dashboard() {
         (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       )
       setRecentChapters(sorted.slice(0, 5))
+
+      // Determine pipeline status
+      const status: Record<string, PipelineStepStatus> = {}
+      if (fullProject.premise || fullProject.description) status['concept'] = 'completed'
+      if ((fullProject.characters?.length ?? 0) > 0) status['worldbuilding'] = 'completed'
+      if ((fullProject.outlines?.length ?? 0) > 0) status['outline'] = 'completed'
+      const writtenChapters = fullProject.chapters?.filter(ch => ch.status === 'written' || ch.status === 'polished').length ?? 0
+      if (writtenChapters > 0) status['writing'] = 'completed'
+      setPipelineStatus(status)
     } catch (err) {
       console.error('Failed to load project data:', err)
     } finally {
@@ -112,8 +135,16 @@ export function Dashboard() {
     )
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+      </div>
+    )
+  }
+
   const status = STATUS_MAP[project.status] || STATUS_MAP.draft
-  const totalWords = (project as any).totalWordCount ?? project.wordCount ?? 0
+  const totalWords = (project as Record<string, unknown>).totalWordCount as number ?? project.wordCount ?? 0
   const chapterCount = chapters.length
   const characterCount = characters.length
   const worldEntryCount = locations.length + loreItems.length
@@ -121,33 +152,33 @@ export function Dashboard() {
     ? Math.min(100, Math.round((totalWords / project.targetWords) * 100))
     : null
 
+  // Calculate pipeline completion
+  const completedSteps = Object.keys(pipelineStatus).filter(k => pipelineStatus[k] === 'completed').length
+  const pipelineProgress = Math.round((completedSteps / PIPELINE_OVERVIEW.length) * 100)
+
   const statCards = [
     {
       label: '总字数',
       value: formatNumber(totalWords),
       icon: FileText,
-      color: 'from-amber-400 to-orange-500',
       bgLight: 'bg-amber-50 dark:bg-amber-900/20',
     },
     {
       label: '章节数',
       value: chapterCount.toString(),
       icon: BookOpen,
-      color: 'from-emerald-400 to-teal-500',
       bgLight: 'bg-emerald-50 dark:bg-emerald-900/20',
     },
     {
       label: '角色数',
       value: characterCount.toString(),
       icon: Users,
-      color: 'from-violet-400 to-purple-500',
       bgLight: 'bg-violet-50 dark:bg-violet-900/20',
     },
     {
       label: '世界观条目',
       value: worldEntryCount.toString(),
       icon: Globe,
-      color: 'from-sky-400 to-blue-500',
       bgLight: 'bg-sky-50 dark:bg-sky-900/20',
     },
   ]
@@ -229,6 +260,79 @@ export function Dashboard() {
           })}
         </motion.div>
 
+        {/* Creation Pipeline Progress */}
+        <motion.div variants={itemVariants} className="mb-8">
+          <Card className="border-border/60">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-amber-500" />
+                  创作流程
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
+                  onClick={() => setCurrentView('pipeline')}
+                >
+                  进入创作流程
+                  <ArrowRight className="h-3 w-3 ml-1" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Pipeline Progress Bar */}
+              <div className="mb-4">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+                  <span>整体进度</span>
+                  <span className="font-semibold text-amber-600 dark:text-amber-400">{pipelineProgress}%</span>
+                </div>
+                <Progress value={pipelineProgress} className="h-2" />
+              </div>
+
+              {/* Pipeline Steps */}
+              <div className="flex items-center justify-between">
+                {PIPELINE_OVERVIEW.map((step, index) => {
+                  const Icon = step.icon
+                  const isCompleted = pipelineStatus[step.key] === 'completed'
+                  const isLast = index === PIPELINE_OVERVIEW.length - 1
+
+                  return (
+                    <div key={step.key} className="flex items-center flex-1">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                          isCompleted
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30'
+                            : 'bg-muted'
+                        }`}>
+                          {isCompleted ? (
+                            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                          ) : (
+                            <Icon className={`h-5 w-5 ${isCompleted ? step.color : 'text-muted-foreground/50'}`} />
+                          )}
+                        </div>
+                        <span className={`text-[10px] mt-1 ${isCompleted ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-muted-foreground'}`}>
+                          {step.label}
+                        </span>
+                      </div>
+                      {!isLast && (
+                        <div className="flex-1 h-0.5 mx-2 rounded-full bg-muted overflow-hidden">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-emerald-400 to-amber-400"
+                            initial={{ width: '0%' }}
+                            animate={{ width: isCompleted ? '100%' : '0%' }}
+                            transition={{ duration: 0.5 }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Writing Progress */}
         {progress !== null && (
           <motion.div variants={itemVariants} className="mb-8">
@@ -265,10 +369,21 @@ export function Dashboard() {
                 <Button
                   variant="outline"
                   className="w-full justify-between group hover:border-amber-300 dark:hover:border-amber-700"
-                  onClick={() => setCurrentView('outline')}
+                  onClick={() => setCurrentView('pipeline')}
                 >
                   <span className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-amber-500" />
+                    进入AI创作流程
+                  </span>
+                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between group hover:border-amber-300 dark:hover:border-amber-700"
+                  onClick={() => setCurrentView('outline')}
+                >
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-emerald-500" />
                     AI生成大纲
                   </span>
                   <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -284,18 +399,18 @@ export function Dashboard() {
                   </span>
                   <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Button>
+                <Separator />
                 <Button
                   variant="outline"
                   className="w-full justify-between group hover:border-amber-300 dark:hover:border-amber-700"
                   onClick={() => setCurrentView('writing')}
                 >
                   <span className="flex items-center gap-2">
-                    <PenTool className="h-4 w-4 text-emerald-500" />
+                    <PenTool className="h-4 w-4 text-orange-500" />
                     开始写作
                   </span>
                   <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Button>
-                <Separator />
                 <Button
                   variant="outline"
                   className="w-full justify-between group hover:border-amber-300 dark:hover:border-amber-700"
@@ -340,9 +455,9 @@ export function Dashboard() {
                     <Button
                       variant="link"
                       className="text-amber-600 dark:text-amber-400 mt-1"
-                      onClick={() => setCurrentView('writing')}
+                      onClick={() => setCurrentView('pipeline')}
                     >
-                      开始写作
+                      AI一键生成
                     </Button>
                   </div>
                 ) : (

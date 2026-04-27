@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Cpu, ChevronDown, Star, Zap, Brain, Sparkles } from 'lucide-react'
-import { AI_MODELS, MODEL_GROUPS, getModelById } from '@/lib/models'
+import { Cpu, ChevronDown, Star, Zap, Brain, Sparkles, ShieldCheck } from 'lucide-react'
+import { AI_MODELS, MODEL_CATEGORIES, getModelById, getModelsByCategory } from '@/lib/models'
+import type { ModelCategory } from '@/lib/models'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -41,10 +42,11 @@ export function ModelSelector({ selectedModel, onModelChange, compact = false }:
     m.tags.some(t => t.includes(search))
   )
 
-  // Group filtered models
-  const groupedModels = MODEL_GROUPS.map(group => ({
-    ...group,
-    models: filteredModels.filter(m => group.providers.includes(m.provider)),
+  // Group filtered models by category
+  const categoriesMap = getModelsByCategory()
+  const groupedModels = MODEL_CATEGORIES.map(cat => ({
+    ...cat,
+    models: filteredModels.filter(m => m.category === cat.key),
   })).filter(g => g.models.length > 0)
 
   return (
@@ -106,9 +108,9 @@ export function ModelSelector({ selectedModel, onModelChange, compact = false }:
               </>
             )}
 
-            {/* All models grouped */}
+            {/* All models grouped by category */}
             {groupedModels.map(group => (
-              <div key={group.label}>
+              <div key={group.key}>
                 <div className="px-2 py-1.5">
                   <p className="text-xs font-semibold text-muted-foreground">{group.label}</p>
                 </div>
@@ -128,6 +130,9 @@ export function ModelSelector({ selectedModel, onModelChange, compact = false }:
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-sm font-medium">{m.name}</span>
                           <span className="text-[10px] text-muted-foreground">{m.providerLabel}</span>
+                          {m.verified && (
+                            <ShieldCheck className="h-3 w-3 text-emerald-500" title="已验证可用" />
+                          )}
                         </div>
                         <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">{m.description}</p>
                         <div className="flex items-center gap-1 mt-1 flex-wrap">
@@ -142,6 +147,7 @@ export function ModelSelector({ selectedModel, onModelChange, compact = false }:
                                 tag === '深度思考' && 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
                                 tag === '中文强' && 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
                                 tag === '快速' && 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+                                tag === '推理强' && 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
                               )}
                             >
                               {TAG_ICONS[tag]}{tag}
@@ -173,7 +179,7 @@ export function ModelSelector({ selectedModel, onModelChange, compact = false }:
         </ScrollArea>
         <div className="p-2 border-t bg-muted/30">
           <p className="text-[10px] text-muted-foreground text-center">
-            共 {AI_MODELS.length} 个模型可用 · Powered by NVIDIA NIM
+            共 {AI_MODELS.length} 个模型可用 · <ShieldCheck className="h-2.5 w-2.5 inline text-emerald-500" /> = 已验证 · Powered by NVIDIA NIM
           </p>
         </div>
       </PopoverContent>

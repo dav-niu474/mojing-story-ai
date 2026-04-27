@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { NovelProject, ViewMode, WorldTab, Character, Location, LoreItem, Faction, Outline, Chapter, Material, VersionSnapshot, ChangeProposal, AiMessage } from '@/lib/types';
+import type { NovelProject, ViewMode, WorldTab, Character, Location, LoreItem, Faction, Outline, Chapter, Material, VersionSnapshot, ChangeProposal, AiMessage, PipelineStep, PipelineStepStatus } from '@/lib/types';
 
 interface AppState {
   // Navigation
@@ -74,6 +74,16 @@ interface AppState {
   setSidebarCollapsed: (collapsed: boolean) => void;
   loading: boolean;
   setLoading: (loading: boolean) => void;
+
+  // Pipeline
+  pipelineStep: PipelineStep | null;
+  setPipelineStep: (step: PipelineStep | null) => void;
+  pipelineStatus: Record<string, PipelineStepStatus>;
+  setPipelineStatus: (status: Record<string, PipelineStepStatus>) => void;
+  oneClickCreating: boolean;
+  setOneClickCreating: (creating: boolean) => void;
+  oneClickProgress: string;
+  setOneClickProgress: (progress: string) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -149,4 +159,14 @@ export const useAppStore = create<AppState>((set) => ({
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
   loading: false,
   setLoading: (loading) => set({ loading }),
+
+  // Pipeline
+  pipelineStep: null,
+  setPipelineStep: (step) => set({ pipelineStep: step }),
+  pipelineStatus: {},
+  setPipelineStatus: (status) => set({ pipelineStatus: status }),
+  oneClickCreating: false,
+  setOneClickCreating: (creating) => set({ oneClickCreating: creating }),
+  oneClickProgress: '',
+  setOneClickProgress: (progress) => set({ oneClickProgress: progress }),
 }));

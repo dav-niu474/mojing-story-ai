@@ -183,5 +183,8 @@ export interface AiMessage {
   timestamp: number;
 }
 
-export type ViewMode = 'projects' | 'dashboard' | 'worldbuilding' | 'outline' | 'writing' | 'materials' | 'versions' | 'ai-assistant';
+export type ViewMode = 'projects' | 'dashboard' | 'worldbuilding' | 'outline' | 'writing' | 'materials' | 'versions' | 'ai-assistant' | 'pipeline';
 export type WorldTab = 'characters' | 'locations' | 'lore' | 'factions';
+
+export type PipelineStep = 'concept' | 'worldbuilding' | 'outline' | 'chapters' | 'writing' | 'polish'
+export type PipelineStepStatus = 'pending' | 'generating' | 'completed' | 'skipped'

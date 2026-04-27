@@ -14,6 +14,7 @@ import {
   X,
   BookOpen,
   ChevronLeft,
+  Workflow,
 } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { api } from '@/lib/api'
@@ -26,6 +27,7 @@ import { WritingView } from '@/components/WritingView'
 import { MaterialsView } from '@/components/MaterialsView'
 import { VersionsView } from '@/components/VersionsView'
 import { AiAssistant } from '@/components/AiAssistant'
+import { CreationPipeline } from '@/components/CreationPipeline'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -38,6 +40,7 @@ import {
 
 const navItems: { view: ViewMode; label: string; icon: React.ElementType }[] = [
   { view: 'dashboard', label: '总览', icon: LayoutDashboard },
+  { view: 'pipeline', label: '创作流程', icon: Workflow },
   { view: 'worldbuilding', label: '世界观', icon: Globe },
   { view: 'outline', label: '大纲', icon: ListTree },
   { view: 'writing', label: '写作', icon: PenTool },
@@ -52,6 +55,8 @@ function ViewRenderer({ view }: { view: ViewMode }) {
       return <ProjectList />
     case 'dashboard':
       return <Dashboard />
+    case 'pipeline':
+      return <CreationPipeline />
     case 'worldbuilding':
       return <WorldBuilding />
     case 'outline':

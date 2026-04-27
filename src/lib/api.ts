@@ -89,4 +89,10 @@ export const api = {
     apiFetch<any>('/ai/chat', { method: 'POST', body: JSON.stringify({ projectId, message, contextType, conversationId, model }) }),
   aiGenerate: (projectId: string, type: string, params: any, model?: string) =>
     apiFetch<{result: string}>('/ai/generate', { method: 'POST', body: JSON.stringify({ projectId, type, params, model }) }),
+
+  // AI Pipeline
+  aiPipeline: (projectId: string, step: string, input: Record<string, unknown>, model?: string) =>
+    apiFetch<any>('/ai/pipeline', { method: 'POST', body: JSON.stringify({ projectId, step, input, model }) }),
+  aiOneClick: (premise: string, genre?: string, style?: string, model?: string, chapters?: number) =>
+    apiFetch<any>('/ai/one-click', { method: 'POST', body: JSON.stringify({ premise, genre, style, model, chapters }) }),
 };

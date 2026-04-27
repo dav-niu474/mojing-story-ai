@@ -5,42 +5,19 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 /**
- * Create PrismaClient based on DATABASE_URL
+ * Create PrismaClient
  *
- * Strategy:
- * - postgresql:// or postgres:// → PostgreSQL (Vercel Postgres / Neon)
- *   Uses @neondatabase/serverless driver adapter for serverless compatibility
- * - file: → SQLite (local development only)
- *   Uses standard PrismaClient, requires schema.sqlite.prisma to be generated
+ * - Vercel (PostgreSQL): DATABASE_URL=postgresql://... → standard PrismaClient
+ * - Local (SQLite): DATABASE_URL=file:... → standard PrismaClient
+ *
+ * Prisma 6+ supports PostgreSQL connections natively in serverless
+ * without needing the Neon adapter for most cases.
  */
 function createPrismaClient(): PrismaClient {
   const databaseUrl = process.env.DATABASE_URL || ''
-  const isPostgres = databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://')
 
-  if (isPostgres) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { Pool } = require('@neondatabase/serverless')
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { PrismaNeon } = require('@prisma/adapter-neon')
-
-      const pool = new Pool({ connectionString: databaseUrl })
-      const adapter = new PrismaNeon(pool)
-
-      return new PrismaClient({
-        adapter,
-        log: process.env.NODE_ENV === 'development' ? ['query'] : [],
-      })
-    } catch (error) {
-      console.error('Failed to initialize Neon adapter, falling back to standard client:', error)
-      return new PrismaClient({
-        datasources: { db: { url: databaseUrl } },
-        log: process.env.NODE_ENV === 'development' ? ['query'] : [],
-      })
-    }
-  }
-
-  // SQLite (local development)
+  // Prisma 6 works with PostgreSQL directly in serverless environments
+  // Connection pooling is handled by Neon's pooler endpoint
   return new PrismaClient({
     datasources: {
       db: {

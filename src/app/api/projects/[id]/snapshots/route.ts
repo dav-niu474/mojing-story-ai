@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 
 interface RouteParams {
@@ -9,6 +9,7 @@ interface RouteParams {
 // GET /api/projects/[id]/snapshots - List snapshots
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const snapshots = await db.versionSnapshot.findMany({
       where: { projectId: id },
@@ -31,6 +32,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 // POST /api/projects/[id]/snapshots - Create snapshot or restore
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
 
     const project = await db.novelProject.findUnique({ where: { id } });
@@ -245,6 +247,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/projects/[id]/snapshots - Delete a snapshot
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id: projectId } = await params;
     const body = await request.json();
     const { id } = body;

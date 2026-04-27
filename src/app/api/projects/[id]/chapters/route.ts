@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse, countWords } from '@/lib/api-utils';
 
 interface RouteParams {
@@ -9,6 +9,7 @@ interface RouteParams {
 // GET /api/projects/[id]/chapters - List chapters (optionally filter by outlineId)
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const outlineId = searchParams.get('outlineId');
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // POST /api/projects/[id]/chapters - Create chapter
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const body = await request.json();
     const { title, outlineId, summary, beats, content, status, notes, sortOrder } = body;
@@ -73,6 +75,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 // PUT /api/projects/[id]/chapters - Update chapter (send id in body, auto-calculate wordCount)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id: projectId } = await params;
     const body = await request.json();
     const { id, title, outlineId, summary, beats, content, status, notes, sortOrder } = body;
@@ -125,6 +128,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/projects/[id]/chapters - Delete chapter (send id in body)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id: projectId } = await params;
     const body = await request.json();
     const { id } = body;

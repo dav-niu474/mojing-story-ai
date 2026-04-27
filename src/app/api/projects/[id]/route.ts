@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 
 interface RouteParams {
@@ -9,6 +9,7 @@ interface RouteParams {
 // GET /api/projects/[id] - Get project with all relations
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const project = await db.novelProject.findUnique({
       where: { id },
@@ -53,6 +54,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 // PUT /api/projects/[id] - Update project
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const body = await request.json();
     const { title, description, genre, subGenre, coverImage, status, targetWords, setting, premise, writingStyle } = body;
@@ -95,6 +97,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/projects/[id] - Delete project and all relations
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
 
     const existing = await db.novelProject.findUnique({ where: { id } });

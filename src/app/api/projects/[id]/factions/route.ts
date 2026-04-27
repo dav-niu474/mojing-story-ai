@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 
 interface RouteParams {
@@ -9,6 +9,7 @@ interface RouteParams {
 // GET /api/projects/[id]/factions - List all factions for project
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const factions = await db.faction.findMany({
       where: { projectId: id },
@@ -24,6 +25,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 // POST /api/projects/[id]/factions - Create faction
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const body = await request.json();
     const { name, description, goals, members, territory, power, tags, sortOrder } = body;
@@ -61,6 +63,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 // PUT /api/projects/[id]/factions - Update faction (send id in body)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id: projectId } = await params;
     const body = await request.json();
     const { id, name, description, goals, members, territory, power, tags, sortOrder } = body;
@@ -98,6 +101,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/projects/[id]/factions - Delete faction (send id in body)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id: projectId } = await params;
     const body = await request.json();
     const { id } = body;

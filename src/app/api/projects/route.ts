@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 
 // GET /api/projects - List all projects with stats
 export async function GET() {
   try {
+    await ensureDbInitialized();
     const projects = await db.novelProject.findMany({
       orderBy: { updatedAt: 'desc' },
       include: {
@@ -41,6 +42,7 @@ export async function GET() {
 // POST /api/projects - Create a new project
 export async function POST(request: NextRequest) {
   try {
+    await ensureDbInitialized();
     const body = await request.json();
     const { title, description, genre, subGenre, coverImage, targetWords, setting, premise, writingStyle } = body;
 

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 
 interface RouteParams {
@@ -9,6 +9,7 @@ interface RouteParams {
 // GET /api/projects/[id]/lore - List all lore items for project
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const loreItems = await db.loreItem.findMany({
       where: { projectId: id },
@@ -24,6 +25,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 // POST /api/projects/[id]/lore - Create lore item
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const body = await request.json();
     const { name, category, description, details, constraints, tags, sortOrder } = body;
@@ -60,6 +62,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 // PUT /api/projects/[id]/lore - Update lore item (send id in body)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id: projectId } = await params;
     const body = await request.json();
     const { id, name, category, description, details, constraints, tags, sortOrder } = body;
@@ -96,6 +99,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/projects/[id]/lore - Delete lore item (send id in body)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id: projectId } = await params;
     const body = await request.json();
     const { id } = body;

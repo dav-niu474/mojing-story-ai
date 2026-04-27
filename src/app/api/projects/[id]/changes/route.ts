@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 
 interface RouteParams {
@@ -12,6 +12,7 @@ const VALID_STATUSES = ['proposed', 'approved', 'in-progress', 'applied', 'rejec
 // GET /api/projects/[id]/changes - List change proposals
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const changes = await db.changeProposal.findMany({
       where: { projectId: id },
@@ -27,6 +28,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 // POST /api/projects/[id]/changes - Create change proposal
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const body = await request.json();
     const { title, description, type, targetScope, impact, plan, status } = body;
@@ -63,6 +65,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 // PUT /api/projects/[id]/changes - Update change proposal status
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id: projectId } = await params;
     const body = await request.json();
     const { id, title, description, type, targetScope, impact, plan, status } = body;

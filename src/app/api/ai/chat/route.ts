@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 import { buildStoryBibleContext, buildOutlineContext, buildRecentChaptersContext, getChatSystemPrompt } from '@/lib/ai-prompts';
 import { getNimModelId, DEFAULT_MODEL } from '@/lib/models';
@@ -8,6 +8,7 @@ import { nvidiaNimGenerate } from '@/lib/nvidia-nim';
 // POST /api/ai/chat - Send a message and get AI response
 export async function POST(request: NextRequest) {
   try {
+    await ensureDbInitialized();
     const body = await request.json();
     const { projectId, message, contextType, conversationId, model } = body;
 

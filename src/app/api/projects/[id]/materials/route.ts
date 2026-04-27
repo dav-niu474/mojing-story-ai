@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 
 interface RouteParams {
@@ -9,6 +9,7 @@ interface RouteParams {
 // GET /api/projects/[id]/materials - List all materials for project
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const materials = await db.material.findMany({
       where: { projectId: id },
@@ -24,6 +25,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 // POST /api/projects/[id]/materials - Create material
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id } = await params;
     const body = await request.json();
     const { title, category, content, source, tags, isGlobal } = body;
@@ -59,6 +61,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 // PUT /api/projects/[id]/materials - Update material (send id in body)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id: projectId } = await params;
     const body = await request.json();
     const { id, title, category, content, source, tags, isGlobal } = body;
@@ -94,6 +97,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/projects/[id]/materials - Delete material (send id in body)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { id: projectId } = await params;
     const body = await request.json();
     const { id } = body;

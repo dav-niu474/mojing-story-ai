@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse, countWords } from '@/lib/api-utils';
 
 interface RouteParams {
@@ -9,6 +9,7 @@ interface RouteParams {
 // GET /api/chapters/[chapterId]/versions - List all versions for a chapter
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { chapterId } = await params;
 
     const chapter = await db.chapter.findUnique({ where: { id: chapterId } });
@@ -31,6 +32,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 // POST /api/chapters/[chapterId]/versions - Create a new version (snapshot current content)
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    await ensureDbInitialized();
     const { chapterId } = await params;
 
     const chapter = await db.chapter.findUnique({ where: { id: chapterId } });

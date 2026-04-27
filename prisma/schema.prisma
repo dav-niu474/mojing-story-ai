@@ -1,12 +1,15 @@
-// AI网文创作平台 - 数据库Schema (SQLite - 本地开发)
+// AI网文创作平台 - 数据库Schema (PostgreSQL - Vercel生产环境)
 // 灵感来源: Superpowers流程架构 + OpenSpec版本管理 + 市场主流产品
+// Vercel部署: 自动使用Vercel Postgres / Neon数据库连接
+// 本地开发: 使用 prisma/schema.sqlite.prisma + file: URL
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -25,8 +28,8 @@ model NovelProject {
   setting      String?
   premise      String?
   writingStyle String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt      @map("updated_at")
 
   characters      Character[]
   locations       Location[]
@@ -38,13 +41,15 @@ model NovelProject {
   snapshots       VersionSnapshot[]
   changes         ChangeProposal[]
   aiConversations AiConversation[]
+
+  @@map("novel_projects")
 }
 
 // ==================== 世界观设定 (Story Bible) ====================
 
 model Character {
   id            String   @id @default(cuid())
-  projectId     String
+  projectId     String   @map("project_id")
   name          String
   role          String?
   title         String?
@@ -58,16 +63,18 @@ model Character {
   motivation    String?
   arc           String?
   tags          String?
-  sortOrder     Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt      @map("updated_at")
 
   project NovelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("characters")
 }
 
 model Location {
   id          String   @id @default(cuid())
-  projectId   String
+  projectId   String   @map("project_id")
   name        String
   category    String?
   description String?
@@ -75,32 +82,36 @@ model Location {
   features    String?
   atmosphere  String?
   tags        String?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
 
   project NovelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("locations")
 }
 
 model LoreItem {
   id          String   @id @default(cuid())
-  projectId   String
+  projectId   String   @map("project_id")
   name        String
   category    String?
   description String?
   details     String?
   constraints String?
   tags        String?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
 
   project NovelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("lore_items")
 }
 
 model Faction {
   id          String   @id @default(cuid())
-  projectId   String
+  projectId   String   @map("project_id")
   name        String
   description String?
   goals       String?
@@ -108,123 +119,139 @@ model Faction {
   territory   String?
   power       String?
   tags        String?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
 
   project NovelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("factions")
 }
 
 // ==================== 大纲系统 (Outline → Beats) ====================
 
 model Outline {
   id          String   @id @default(cuid())
-  projectId   String
+  projectId   String   @map("project_id")
   title       String
   type        String   @default("act")
   description String?
-  keyEvents   String?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  keyEvents   String?  @map("key_events")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
 
   project  NovelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
   chapters Chapter[]
+
+  @@map("outlines")
 }
 
 // ==================== 章节与写作 ====================
 
 model Chapter {
   id         String   @id @default(cuid())
-  projectId  String
-  outlineId  String?
+  projectId  String   @map("project_id")
+  outlineId  String?  @map("outline_id")
   title      String
   summary    String?
   beats      String?
   content    String?
-  wordCount  Int      @default(0)
+  wordCount  Int      @default(0) @map("word_count")
   status     String   @default("planned")
   notes      String?
-  sortOrder  Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt      @map("updated_at")
 
   project NovelProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   outline Outline?      @relation(fields: [outlineId], references: [id], onDelete: SetNull)
   versions ChapterVersion[]
+
+  @@map("chapters")
 }
 
 model ChapterVersion {
   id         String   @id @default(cuid())
-  chapterId  String
+  chapterId  String   @map("chapter_id")
   content    String
-  wordCount  Int
+  wordCount  Int      @map("word_count")
   label      String?
-  changeNote String?
+  changeNote String?  @map("change_note")
   source     String   @default("manual")
-  createdAt  DateTime @default(now())
+  createdAt  DateTime @default(now()) @map("created_at")
 
   chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@map("chapter_versions")
 }
 
 // ==================== 素材库 ====================
 
 model Material {
   id        String   @id @default(cuid())
-  projectId String
+  projectId String   @map("project_id")
   title     String
   category  String?
   content   String?
   source    String?
   tags      String?
-  isGlobal  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isGlobal  Boolean  @default(false) @map("is_global")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
 
   project NovelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("materials")
 }
 
 // ==================== 版本管理 (OpenSpec-inspired) ====================
 
 model VersionSnapshot {
   id        String   @id @default(cuid())
-  projectId String
+  projectId String   @map("project_id")
   label     String
   type      String   @default("milestone")
   data      String
   note      String?
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   project NovelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("version_snapshots")
 }
 
 model ChangeProposal {
   id          String    @id @default(cuid())
-  projectId   String
+  projectId   String    @map("project_id")
   title       String
   description String?
   type        String    @default("revision")
-  targetScope String?
+  targetScope String?   @map("target_scope")
   impact      String?
   plan        String?
   status      String    @default("proposed")
-  appliedAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  appliedAt   DateTime? @map("applied_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt      @map("updated_at")
 
   project NovelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("change_proposals")
 }
 
 // ==================== AI对话记录 ====================
 
 model AiConversation {
   id        String   @id @default(cuid())
-  projectId String
+  projectId String   @map("project_id")
   title     String?
   context   String?
   messages  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
 
   project NovelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("ai_conversations")
 }

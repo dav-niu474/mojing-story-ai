@@ -165,7 +165,7 @@ ${project.writingStyle ? '已有文风参考：' + project.writingStyle : ''}
 
 请以JSON格式输出。`;
 
-  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], options);
+  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens });
   const parsed = parseJsonResponse(aiResponse);
 
   if (!parsed || typeof parsed !== 'object') {
@@ -277,7 +277,7 @@ ${project.setting ? '已有世界观参考：' + project.setting : ''}
 
 请以JSON格式输出。`;
 
-  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { ...options, maxTokens: options.maxTokens || 8192 });
+  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 8192 });
   const parsed = parseJsonResponse(aiResponse);
 
   if (!parsed || typeof parsed !== 'object') {
@@ -434,7 +434,7 @@ ${existingOutline ? '=== 已有大纲 ===\n' + existingOutline : ''}
 
 请以JSON格式输出。`;
 
-  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { ...options, maxTokens: options.maxTokens || 8192 });
+  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 8192 });
   const parsed = parseJsonResponse(aiResponse);
 
   if (!parsed || typeof parsed !== 'object') {
@@ -587,7 +587,7 @@ ${chaptersList}
 
 请以JSON格式输出。`;
 
-  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { ...options, maxTokens: options.maxTokens || 8192 });
+  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 8192 });
   const parsed = parseJsonResponse(aiResponse);
 
   if (!parsed || typeof parsed !== 'object') {
@@ -699,7 +699,7 @@ ${previousChapter.content ? '正文（末尾500字）：\n' + previousChapter.co
 
 请直接输出章节正文。`;
 
-  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { ...options, maxTokens: options.maxTokens || 8192 });
+  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 8192 });
 
   const wordCount = countWords(aiResponse);
 
@@ -801,7 +801,7 @@ ${chapter.content}
 
 请直接输出润色后的完整章节文本。`;
 
-  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { ...options, maxTokens: options.maxTokens || 8192 });
+  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 8192 });
 
   const wordCount = countWords(aiResponse);
 

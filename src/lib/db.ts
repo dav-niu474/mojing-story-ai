@@ -24,7 +24,7 @@ function createPrismaClient(): PrismaClient {
         url: databaseUrl || 'file:./db/custom.db',
       },
     },
-    log: process.env.NODE_ENV === 'development' ? ['query'] : [],
+    log: [],
   })
 }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ensureDbInitialized } from '@/lib/db';
 
 /**
  * Count Chinese characters + English words
@@ -29,4 +30,13 @@ export function errorResponse(message: string, status: number = 500) {
  */
 export function successResponse(data: unknown, status: number = 200) {
   return NextResponse.json(data, { status });
+}
+
+/**
+ * Ensure the database is initialized (for Vercel serverless)
+ * Call this at the start of each API handler
+ */
+export async function withDb<T>(handler: () => Promise<T>): Promise<T> {
+  await ensureDbInitialized();
+  return handler();
 }

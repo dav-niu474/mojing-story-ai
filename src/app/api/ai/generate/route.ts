@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 import { buildStoryBibleContext, buildOutlineContext, buildRecentChaptersContext, getGenerateSystemPrompt } from '@/lib/ai-prompts';
+import { getNimModelId, DEFAULT_MODEL } from '@/lib/models';
+import { nvidiaNimGenerate } from '@/lib/nvidia-nim';
 
 // POST /api/ai/generate - Generate content
 export async function POST(request: NextRequest) {
@@ -79,22 +81,15 @@ export async function POST(request: NextRequest) {
     // Get system prompt
     const systemPrompt = getGenerateSystemPrompt(type);
 
-    // Call AI
-    const ZAI = (await import('z-ai-web-dev-sdk')).default;
-    const zai = await ZAI.create();
-    const completionOptions: Record<string, unknown> = {
-      messages: [
-        { role: 'assistant', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      thinking: { type: 'disabled' },
-    };
-    if (model) {
-      completionOptions.model = model;
-    }
-    const completion = await zai.chat.completions.create(completionOptions);
-
-    const aiResponse = completion.choices[0]?.message?.content || '';
+    // Call NVIDIA NIM API
+    const nimModelId = getNimModelId(model || DEFAULT_MODEL);
+    const maxTokens = ['outline', 'chapter', 'worldbuilding'].includes(type) ? 8192 : 4096;
+    const aiResponse = await nvidiaNimGenerate(
+      nimModelId,
+      systemPrompt,
+      [{ role: 'user', content: userMessage }],
+      { temperature: 0.7, max_tokens: maxTokens },
+    );
 
     // Try to parse JSON response for structured types
     let parsedResponse: unknown = aiResponse;

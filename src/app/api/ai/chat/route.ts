@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 import { buildStoryBibleContext, buildOutlineContext, buildRecentChaptersContext, getChatSystemPrompt } from '@/lib/ai-prompts';
+import { getNimModelId, DEFAULT_MODEL } from '@/lib/models';
+import { nvidiaNimGenerate } from '@/lib/nvidia-nim';
 
 // POST /api/ai/chat - Send a message and get AI response
 export async function POST(request: NextRequest) {
@@ -83,22 +85,13 @@ export async function POST(request: NextRequest) {
     // Add user message
     messages.push({ role: 'user', content: message });
 
-    // Call AI
-    const ZAI = (await import('z-ai-web-dev-sdk')).default;
-    const zai = await ZAI.create();
-    const completionOptions: Record<string, unknown> = {
-      messages: [
-        { role: 'assistant', content: systemPrompt },
-        ...messages,
-      ],
-      thinking: { type: 'disabled' },
-    };
-    if (model) {
-      completionOptions.model = model;
-    }
-    const completion = await zai.chat.completions.create(completionOptions);
-
-    const aiResponse = completion.choices[0]?.message?.content || '抱歉，我无法生成回复。';
+    // Call NVIDIA NIM API
+    const nimModelId = getNimModelId(model || DEFAULT_MODEL);
+    const aiResponse = await nvidiaNimGenerate(
+      nimModelId,
+      systemPrompt,
+      messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+    );
 
     // Add AI response to messages
     messages.push({ role: 'assistant', content: aiResponse });
@@ -125,6 +118,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse({
       conversationId: conversation.id,
+      response: aiResponse,
       message: aiResponse,
       messages: messages,
     });

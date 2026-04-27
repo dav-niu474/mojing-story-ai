@@ -10,7 +10,11 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "db:push:postgres": "prisma db push --schema=prisma/schema.postgres.prisma",
+    "db:generate:postgres": "prisma generate --schema=prisma/schema.postgres.prisma",
+    "db:migrate:postgres": "prisma migrate dev --schema=prisma/schema.postgres.prisma",
+    "vercel-build": "prisma generate --schema=prisma/schema.postgres.prisma && prisma db push --schema=prisma/schema.postgres.prisma --accept-data-loss && next build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -18,6 +22,8 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.1.1",
     "@mdxeditor/editor": "^3.39.1",
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-neon": "^7.8.0",
     "@prisma/client": "^6.11.1",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",

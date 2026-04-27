@@ -69,3 +69,142 @@ Stage Summary:
 - All components use Zustand store and API layer
 - Warm amber/stone color palette throughout
 - Responsive design with mobile sidebar overlay
+
+---
+Task ID: 7
+Agent: worldbuilding-builder
+Task: Implement WorldBuilding component with full CRUD functionality
+
+Work Log:
+- Replaced placeholder WorldBuilding component with full-featured implementation
+- Implemented 4-tab layout: Characters (角色), Locations (地点), Lore Items (设定), Factions (势力)
+- Built left-panel list with search, filtering, and item selection
+- Built right-panel detail view with read-only and edit modes
+- Implemented CreateDialog component for creating new items via API
+- Implemented DetailPanel with edit mode, save, and delete functionality
+- Implemented AlertDialog confirmation for delete operations
+- All CRUD operations go through the API for data persistence (api.createCharacter, api.updateCharacter, etc.)
+- Auto-load data from API when switching tabs
+- Added AI generation support via api.aiGenerate with model selector integration
+- Used violet accent color for WorldBuilding section to differentiate from amber dashboard
+- Extracted DetailSection, DetailField, FormSection as top-level components to avoid React render-time component creation
+- Fixed lint errors (react-hooks/static-components rule)
+- Lint passes with zero errors
+
+Stage Summary:
+- WorldBuilding.tsx rewritten from 78-line placeholder to ~1400-line full CRUD component
+- 4 entity types with complete Create/Read/Update/Delete via REST API
+- Search/filter across name, description, and tags
+- Edit mode with form fields matching each entity type's schema
+- View mode with styled section display for all fields
+- Delete with confirmation dialog
+- AI generation integration for expanding existing items
+- Toast notifications for all operations (success/failure)
+- Responsive design matching existing amber/warm color scheme
+
+---
+Task ID: 7b
+Agent: materials-versions-builder
+Task: Implement MaterialsView and VersionsView components with full CRUD functionality
+
+Work Log:
+- Replaced placeholder MaterialsView component (~80 lines) with full-featured implementation (~400 lines)
+- Replaced placeholder VersionsView component (~120 lines) with full-featured implementation (~580 lines)
+- MaterialsView features:
+  - Header with "素材库" title and "添加素材" button
+  - Category filter tabs (全部/模板/参考/灵感/生成器/名词/桥段) with counts
+  - Search/filter functionality across title, content, tags, source
+  - Grid of material cards with category icon, title, content preview, tags, isGlobal badge
+  - Hover actions: view, edit, delete on each card
+  - Create material dialog with title, category select (shadcn Select), content textarea, source, tags, isGlobal toggle (shadcn Switch)
+  - View material dialog with full content display, metadata, edit/delete actions
+  - Edit material dialog with same fields as create
+  - Delete with AlertDialog confirmation
+  - All CRUD operations persist via API (api.createMaterial, api.updateMaterial, api.deleteMaterial)
+  - Auto-load from API on mount via useEffect
+  - Orange accent color scheme
+  - Framer-motion animations (AnimatePresence, layout, card transitions)
+  - Toast notifications for all operations
+
+- VersionsView features:
+  - Two tabs (快照/变更提案) using shadcn Tabs component
+  - SnapshotsTab component:
+    - "创建快照" button with dialog (label, type select, note)
+    - Snapshot type badges with color coding (milestone/checkpoint/auto/pre-change)
+    - List of snapshots with label, type icon+badge, date, note preview
+    - Hover actions: view, restore, delete
+    - View dialog showing snapshot details and JSON data preview
+    - Restore from snapshot with confirmation AlertDialog (warning about unsaved changes)
+    - Delete with AlertDialog confirmation
+    - All operations via API (api.createSnapshot, api.restoreSnapshot, api.deleteSnapshot)
+  - ChangesTab component:
+    - "新建变更提案" button with dialog (title, type select, description, targetScope, impact, plan)
+    - Change type labels (修订/新增/删除/重构)
+    - Status badges with color coding (proposed/approved/in-progress/applied/rejected/archived)
+    - List of proposals with title, type badge, status badge, description preview, dates
+    - View dialog with full details + status transition buttons
+    - Status progression: proposed → approved → in-progress → applied (with "推进" button)
+    - Reject button to move to "rejected" status
+    - Edit dialog for modifying proposal content
+    - Archive instead of delete (sets status to 'archived')
+    - All operations via API (api.createChange, api.updateChange)
+  - Teal accent color scheme throughout
+  - Framer-motion animations
+  - Toast notifications for all operations
+  - Archived proposals count indicator
+
+- Both components follow established patterns from WorldBuilding.tsx
+- Extracted sub-components (SnapshotsTab, ChangesTab) at module level to avoid React render-time component creation
+- Lint passes with zero errors
+- TypeScript compilation passes with no errors in these files
+
+Stage Summary:
+- MaterialsView.tsx: 80→~400 lines, full CRUD with category filtering, search, dialog-based editing
+- VersionsView.tsx: 120→~580 lines, full CRUD for snapshots and change proposals with status workflow
+- Both use orange/teal accent colors respectively, consistent with placeholder design
+- All data persisted through existing API routes
+- Toast notifications, confirmation dialogs, responsive design throughout
+
+---
+Task ID: 8
+Agent: main
+Task: Configure Vercel database persistence (PostgreSQL/Neon) and fix data persistence issues
+
+Work Log:
+- Analyzed the current database setup: SQLite with ephemeral /tmp storage on Vercel
+- Identified core problem: SQLite doesn't persist on Vercel serverless (ephemeral filesystem)
+- Installed @neondatabase/serverless and @prisma/adapter-neon packages
+- Created dual-schema approach:
+  - prisma/schema.prisma — SQLite provider (default, for local/sandbox development)
+  - prisma/schema.postgres.prisma — PostgreSQL provider with driverAdapters (for Vercel Neon)
+- Updated src/lib/db.ts:
+  - Smart DATABASE_URL detection: file: → SQLite, postgresql:// → Neon
+  - Neon serverless driver adapter initialization for Vercel
+  - Standard PrismaClient for local SQLite development
+  - Removed the fragile raw SQL table creation code from the old db.ts
+  - Proper error handling and fallbacks
+- Updated .env with Neon connection string template
+- Updated package.json with Vercel-specific scripts:
+  - db:push:postgres — Push schema to Neon
+  - db:generate:postgres — Generate Prisma client for PostgreSQL
+  - vercel-build — Full Vercel build command with PostgreSQL schema
+- Implemented WorldBuilding component with full CRUD (Characters, Locations, Lore Items, Factions)
+- Implemented MaterialsView component with full CRUD (Create, View, Edit, Delete materials)
+- Implemented VersionsView component with full CRUD (Snapshots + Change Proposals with status workflow)
+- Verified all components persist data through API to database
+- Lint passes with zero errors
+- Dev server runs correctly, Prisma queries execute successfully
+
+Stage Summary:
+- Dual-database architecture: SQLite (local) + PostgreSQL/Neon (Vercel)
+- All 7 functional modules now have full CRUD persistence:
+  1. ProjectList — Create/Delete projects
+  2. Dashboard — Load project data
+  3. WorldBuilding — Full CRUD for Characters, Locations, Lore Items, Factions
+  4. OutlineView — Full CRUD for Outlines, Chapters, Beats
+  5. WritingView — Full CRUD for Chapters, Versions, AI generation
+  6. MaterialsView — Full CRUD for Materials
+  7. VersionsView — Full CRUD for Snapshots, Change Proposals
+  8. AiAssistant — Chat with context-aware AI
+- 31 NVIDIA NIM text models configured for selection
+- Vercel deployment ready with proper DATABASE_URL configuration

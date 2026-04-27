@@ -51,6 +51,8 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ModelSelector } from '@/components/ModelSelector';
+import { getModelById } from '@/lib/models';
 
 // ─── Status helpers ───────────────────────────────────────────────
 const STATUS_MAP: Record<string, { label: string; color: string; dotColor: string }> = {
@@ -94,6 +96,8 @@ export function WritingView() {
     setChapters,
     selectedChapter,
     setSelectedChapter,
+    selectedModel,
+    setSelectedModel,
   } = useAppStore();
 
   const projectId = currentProject?.id;
@@ -255,7 +259,7 @@ export function WritingView() {
         params = { content: selectedText, instruction: '润色文字，提升文笔质量，增强画面感' };
       }
 
-      const result = await api.aiGenerate(projectId, type, params);
+      const result = await api.aiGenerate(projectId, type, params, selectedModel);
       const text = typeof result === 'string' ? result : String(result);
       setAiPreview(text);
       setAiPreviewType(type);
@@ -275,7 +279,7 @@ export function WritingView() {
       const result = await api.aiGenerate(projectId, 'continuation', {
         existingContent: lastContent,
         instruction: '扩写当前内容，增加细节描写、心理活动和环境刻画，保持原有文风',
-      });
+      }, selectedModel);
       const text = typeof result === 'string' ? result : String(result);
       setAiPreview(text);
       setAiPreviewType('expand');
@@ -321,7 +325,7 @@ export function WritingView() {
           break;
       }
 
-      const result = await api.aiGenerate(projectId, type, params);
+      const result = await api.aiGenerate(projectId, type, params, selectedModel);
       const text = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
       setAiPreview(text);
       setAiPreviewType(action);
@@ -340,8 +344,8 @@ export function WritingView() {
     setChatMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setChatLoading(true);
     try {
-      const result = await api.aiChat(projectId, userMsg, 'writing');
-      setChatMessages(prev => [...prev, { role: 'assistant', content: result.response }]);
+      const result = await api.aiChat(projectId, userMsg, 'writing', undefined, selectedModel);
+      setChatMessages(prev => [...prev, { role: 'assistant', content: result.response || result.message }]);
     } catch {
       setChatMessages(prev => [...prev, { role: 'assistant', content: '抱歉，AI回复失败，请重试。' }]);
     } finally {
@@ -505,6 +509,11 @@ export function WritingView() {
           <>
             {/* Toolbar */}
             <div className="flex items-center gap-2 p-3 border-b bg-muted/30 flex-wrap">
+              <ModelSelector
+                selectedModel={selectedModel}
+                onModelChange={setSelectedModel}
+                compact
+              />
               <Button variant="outline" size="sm" onClick={() => handleAiGenerate('continuation')} disabled={aiGenerating} title="AI续写">
                 {aiGenerating ? <Loader2 className="size-4 mr-1 animate-spin" /> : <Sparkles className="size-4 mr-1" />}
                 AI续写

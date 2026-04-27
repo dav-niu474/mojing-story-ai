@@ -4,10 +4,12 @@ import { useState, useRef, useEffect } from 'react'
 import { Bot, Send, Trash2, Sparkles } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { api } from '@/lib/api'
+import { getModelById } from '@/lib/models'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
+import { ModelSelector } from '@/components/ModelSelector'
 
 const CONTEXT_OPTIONS = [
   { value: 'world-building', label: '世界观构建' },
@@ -17,7 +19,7 @@ const CONTEXT_OPTIONS = [
 ]
 
 export function AiAssistant() {
-  const { currentProject, aiMessages, addAiMessage, clearAiMessages, aiLoading, setAiLoading } = useAppStore()
+  const { currentProject, aiMessages, addAiMessage, clearAiMessages, aiLoading, setAiLoading, selectedModel, setSelectedModel } = useAppStore()
   const [input, setInput] = useState('')
   const [contextType, setContextType] = useState('writing')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -42,10 +44,10 @@ export function AiAssistant() {
     setAiLoading(true)
 
     try {
-      const res = await api.aiChat(currentProject.id, userMsg.content, contextType)
+      const res = await api.aiChat(currentProject.id, userMsg.content, contextType, undefined, selectedModel)
       addAiMessage({
         role: 'assistant',
-        content: res.response,
+        content: res.response || res.message,
         timestamp: Date.now(),
       })
     } catch (err) {
@@ -67,25 +69,45 @@ export function AiAssistant() {
     }
   }
 
+  const currentModelInfo = getModelById(selectedModel)
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex-shrink-0 border-b px-4 sm:px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center">
-              <Bot className="h-5 w-5 text-white" />
+      <div className="flex-shrink-0 border-b px-4 sm:px-6 py-3">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center">
+                <Bot className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">AI创作助手</h2>
+                <p className="text-sm text-muted-foreground">
+                  智能对话，辅助创作
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground">AI创作助手</h2>
-              <p className="text-sm text-muted-foreground">
-                智能对话，辅助创作
-              </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground"
+                onClick={clearAiMessages}
+                title="清空对话"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Context type selector */}
-            <div className="hidden sm:flex items-center gap-1 bg-muted rounded-lg p-1">
+
+          {/* Model selector + context type */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <ModelSelector
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+            />
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
               {CONTEXT_OPTIONS.map((opt) => (
                 <Button
                   key={opt.value}
@@ -98,15 +120,6 @@ export function AiAssistant() {
                 </Button>
               ))}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground"
-              onClick={clearAiMessages}
-              title="清空对话"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </div>
@@ -125,6 +138,9 @@ export function AiAssistant() {
                   <p className="text-sm text-muted-foreground max-w-sm">
                     你可以问我关于世界观构建、大纲规划、角色设计、写作技巧等问题，
                     我会结合当前项目上下文为你提供帮助。
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    当前模型：<span className="font-medium text-foreground">{currentModelInfo?.name || selectedModel}</span>
                   </p>
                   <div className="flex flex-wrap gap-2 mt-4 justify-center">
                     {[
@@ -165,7 +181,7 @@ export function AiAssistant() {
                     {msg.role === 'assistant' && (
                       <div className="flex items-center gap-1.5 mb-1">
                         <Bot className="h-3.5 w-3.5 text-orange-500" />
-                        <span className="text-[10px] font-medium text-muted-foreground">AI助手</span>
+                        <span className="text-[10px] font-medium text-muted-foreground">{currentModelInfo?.name || 'AI助手'}</span>
                       </div>
                     )}
                     <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -178,6 +194,7 @@ export function AiAssistant() {
                   <div className="bg-muted rounded-2xl px-4 py-3 text-sm">
                     <div className="flex items-center gap-2">
                       <Bot className="h-3.5 w-3.5 text-orange-500" />
+                      <span className="text-xs text-muted-foreground">{currentModelInfo?.name || 'AI'} 思考中</span>
                       <div className="flex gap-1">
                         <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce [animation-delay:0ms]" />
                         <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce [animation-delay:150ms]" />
@@ -209,7 +226,7 @@ export function AiAssistant() {
             <div className="flex gap-2">
               <Input
                 ref={inputRef}
-                placeholder="输入你的问题或创作需求..."
+                placeholder={`向 ${currentModelInfo?.name || 'AI'} 提问...`}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}

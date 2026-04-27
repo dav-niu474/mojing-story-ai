@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { api } from '@/lib/api'
+import { getModelById } from '@/lib/models'
+import { ModelSelector } from '@/components/ModelSelector'
 import type { NovelProject, Chapter } from '@/lib/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -59,6 +61,8 @@ export function Dashboard() {
     characters,
     locations,
     loreItems,
+    selectedModel,
+    setSelectedModel,
   } = useAppStore()
 
   const [recentChapters, setRecentChapters] = useState<Chapter[]>([])
@@ -191,6 +195,14 @@ export function Dashboard() {
                   </p>
                 </div>
               )}
+            </div>
+            <div className="flex-shrink-0">
+              <div className="flex flex-col items-end gap-1">
+                <ModelSelector selectedModel={selectedModel} onModelChange={setSelectedModel} />
+                <span className="text-[10px] text-muted-foreground">
+                  {getModelById(selectedModel)?.description?.slice(0, 30)}...
+                </span>
+              </div>
             </div>
           </div>
         </motion.div>

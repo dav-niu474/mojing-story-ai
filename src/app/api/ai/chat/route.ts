@@ -7,7 +7,7 @@ import { buildStoryBibleContext, buildOutlineContext, buildRecentChaptersContext
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { projectId, message, contextType, conversationId } = body;
+    const { projectId, message, contextType, conversationId, model } = body;
 
     if (!projectId || !message) {
       return errorResponse('projectId and message are required', 400);
@@ -86,13 +86,17 @@ export async function POST(request: NextRequest) {
     // Call AI
     const ZAI = (await import('z-ai-web-dev-sdk')).default;
     const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
+    const completionOptions: Record<string, unknown> = {
       messages: [
         { role: 'assistant', content: systemPrompt },
         ...messages,
       ],
       thinking: { type: 'disabled' },
-    });
+    };
+    if (model) {
+      completionOptions.model = model;
+    }
+    const completion = await zai.chat.completions.create(completionOptions);
 
     const aiResponse = completion.choices[0]?.message?.content || '抱歉，我无法生成回复。';
 

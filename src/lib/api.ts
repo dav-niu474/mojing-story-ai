@@ -85,8 +85,8 @@ export const api = {
   updateChange: (projectId: string, id: string, data: any) => apiFetch<any>(`/projects/${projectId}/changes`, { method: 'PUT', body: JSON.stringify({ id, ...data }) }),
 
   // AI
-  aiChat: (projectId: string, message: string, contextType: string, conversationId?: string) =>
-    apiFetch<any>('/ai/chat', { method: 'POST', body: JSON.stringify({ projectId, message, contextType, conversationId }) }),
-  aiGenerate: (projectId: string, type: string, params: any) =>
-    apiFetch<{result: string}>('/ai/generate', { method: 'POST', body: JSON.stringify({ projectId, type, params }) }),
+  aiChat: (projectId: string, message: string, contextType: string, conversationId?: string, model?: string) =>
+    apiFetch<any>('/ai/chat', { method: 'POST', body: JSON.stringify({ projectId, message, contextType, conversationId, model }) }),
+  aiGenerate: (projectId: string, type: string, params: any, model?: string) =>
+    apiFetch<{result: string}>('/ai/generate', { method: 'POST', body: JSON.stringify({ projectId, type, params, model }) }),
 };

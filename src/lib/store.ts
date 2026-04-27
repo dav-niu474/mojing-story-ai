@@ -65,6 +65,10 @@ interface AppState {
   aiLoading: boolean;
   setAiLoading: (loading: boolean) => void;
   
+  // AI Model
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
+  
   // UI State
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -135,6 +139,10 @@ export const useAppStore = create<AppState>((set) => ({
   clearAiMessages: () => set({ aiMessages: [] }),
   aiLoading: false,
   setAiLoading: (loading) => set({ aiLoading: loading }),
+  
+  // AI Model
+  selectedModel: 'glm-5.1',
+  setSelectedModel: (model) => set({ selectedModel: model }),
   
   // UI State
   sidebarCollapsed: false,

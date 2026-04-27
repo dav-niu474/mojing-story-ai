@@ -52,6 +52,7 @@ import {
   Pencil,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ModelSelector } from '@/components/ModelSelector';
 
 // ─── Beat type ────────────────────────────────────────────────────
 interface Beat {
@@ -95,6 +96,8 @@ export function OutlineView() {
     setSelectedOutline,
     chapters,
     setChapters,
+    selectedModel,
+    setSelectedModel,
   } = useAppStore();
 
   const projectId = currentProject?.id;
@@ -237,7 +240,7 @@ export function OutlineView() {
     try {
       const result = await api.aiGenerate(projectId, 'outline', {
         instruction: `请根据项目设定生成大纲，类型：${OUTLINE_TYPE_MAP[editType]?.label || '幕'}`,
-      });
+      }, selectedModel);
       const raw = typeof result === 'string' ? result : JSON.stringify(result);
       try {
         const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -333,7 +336,7 @@ export function OutlineView() {
         title: chapter.title,
         summary: chapter.summary || '',
         outlineTitle: selectedOutline?.title || '',
-      });
+      }, selectedModel);
       const raw = typeof result === 'string' ? result : JSON.stringify(result);
       try {
         const jsonMatch = raw.match(/\[[\s\S]*\]/);
@@ -379,7 +382,7 @@ export function OutlineView() {
         summary: chapter.summary || '',
         outlineTitle: selectedOutline?.title || '',
         instruction: '为该章节生成详细的场景节拍大纲',
-      });
+      }, selectedModel);
       const raw = typeof result === 'string' ? result : JSON.stringify(result);
       try {
         const jsonMatch = raw.match(/\[[\s\S]*\]/);
@@ -475,7 +478,9 @@ export function OutlineView() {
       <div className="w-full lg:w-1/3 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">大纲结构</h2>
-          <DropdownMenu>
+          <div className="flex items-center gap-2">
+            <ModelSelector selectedModel={selectedModel} onModelChange={setSelectedModel} compact />
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="outline">
                 <Plus className="size-4 mr-1" /> 新建大纲
@@ -492,7 +497,8 @@ export function OutlineView() {
                 <FileText className="size-4 mr-2" /> 线索
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </div>
         </div>
 
         <ScrollArea className="flex-1 max-h-[calc(100vh-14rem)]">

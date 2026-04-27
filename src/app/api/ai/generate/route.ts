@@ -7,7 +7,7 @@ import { buildStoryBibleContext, buildOutlineContext, buildRecentChaptersContext
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { projectId, type, params } = body;
+    const { projectId, type, params, model } = body;
 
     if (!projectId || !type) {
       return errorResponse('projectId and type are required', 400);
@@ -82,13 +82,17 @@ export async function POST(request: NextRequest) {
     // Call AI
     const ZAI = (await import('z-ai-web-dev-sdk')).default;
     const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
+    const completionOptions: Record<string, unknown> = {
       messages: [
         { role: 'assistant', content: systemPrompt },
         { role: 'user', content: userMessage },
       ],
       thinking: { type: 'disabled' },
-    });
+    };
+    if (model) {
+      completionOptions.model = model;
+    }
+    const completion = await zai.chat.completions.create(completionOptions);
 
     const aiResponse = completion.choices[0]?.message?.content || '';
 

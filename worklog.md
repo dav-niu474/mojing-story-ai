@@ -208,3 +208,34 @@ Stage Summary:
   8. AiAssistant — Chat with context-aware AI
 - 31 NVIDIA NIM text models configured for selection
 - Vercel deployment ready with proper DATABASE_URL configuration
+
+---
+Task ID: 9
+Agent: main
+Task: Fix security leaks, switch to Vercel Postgres, push and deploy
+
+Work Log:
+- Discovered .env file was committed to Git history (NVIDIA_API_KEY leaked)
+- Discovered GitHub token embedded in git remote URL
+- Used git filter-branch to remove .env from entire Git history
+- Fixed remote URL: removed embedded GitHub PAT token
+- Switched primary prisma/schema.prisma from SQLite → PostgreSQL with Neon driver adapter
+- Moved SQLite schema to prisma/schema.sqlite.prisma (local dev only)
+- Updated src/lib/db.ts: auto-detects DATABASE_URL protocol (postgresql:// → Neon, file: → SQLite)
+- Updated package.json: vercel-build uses schema.prisma (PostgreSQL), dev uses schema.sqlite.prisma
+- Created .env.example template (no real keys) as documentation
+- Tightened .gitignore: explicit .env exclusions with !.env.example exception, added /db/
+- Deleted old prisma/schema.postgres.prisma (merged into main schema)
+- Lint passes with zero errors
+- Local dev server verified working with SQLite
+- Force pushed cleaned history to GitHub: main → main (forced update)
+- Cleaned remote URL token after push
+
+Stage Summary:
+- CRITICAL FIX: .env with NVIDIA_API_KEY purged from all Git history
+- CRITICAL FIX: GitHub PAT token removed from remote URL
+- PostgreSQL is now the primary schema for Vercel deployment
+- Vercel build: prisma generate + prisma db push + next build (all using PostgreSQL schema)
+- Local dev: prisma generate --schema=sqlite + next dev (using SQLite schema)
+- Code pushed to GitHub, Vercel auto-deploy triggered
+- User needs to verify Vercel project has DATABASE_URL env var set to their Postgres connection string

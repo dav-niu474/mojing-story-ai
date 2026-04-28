@@ -205,7 +205,9 @@ async function handleWorldbuilding(
 
   const systemPrompt = `你是网文世界观设计师。根据故事概念创建精简世界观设定。
 
-输出JSON格式（每个字段尽量简短，1-2句话即可）：
+IMPORTANT: JSON keys MUST be in English as shown below.
+
+输出JSON格式（每字段1-2句话，简短即可）：
 {
   "characters": [
     {"name":"角色名","role":"protagonist|antagonist|supporting","description":"简短描述","personality":"性格","abilities":"能力"}
@@ -221,7 +223,7 @@ async function handleWorldbuilding(
   ]
 }
 
-要求：3-4个角色，2-3个地点，2-3个设定，1-2个势力。每个字段1-2句话，不要写太长。`;
+要求：3-4个角色，2-3个地点，2-3个设定，1-2个势力。每个字段1-2句话，不要写太长。JSON键名必须用英文。`;
 
   const userMessage = `故事概念：${concept}
 类型：${genre}
@@ -237,11 +239,33 @@ async function handleWorldbuilding(
 
   const data = parsed as Record<string, unknown>;
 
-  // Use batch inserts for better performance (avoid N individual DB round-trips)
-  const characters = (data.characters as Array<Record<string, unknown>>) || [];
-  const locations = (data.locations as Array<Record<string, unknown>>) || [];
-  const lores = (data.lores as Array<Record<string, unknown>>) || [];
-  const factions = (data.factions as Array<Record<string, unknown>>) || [];
+  // Handle Chinese JSON keys from AI (fallback mapping)
+  const mapped = {
+    characters: (data.characters || data['角色'] || []) as Array<Record<string, unknown>>,
+    locations: (data.locations || data['地点'] || []) as Array<Record<string, unknown>>,
+    lores: (data.lores || data['设定'] || []) as Array<Record<string, unknown>>,
+    factions: (data.factions || data['势力'] || []) as Array<Record<string, unknown>>,
+  };
+
+  // Normalize Chinese sub-keys in each entity
+  const normalizeEntity = (entity: Record<string, unknown>, keyMap: Record<string, string>): Record<string, unknown> => {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(entity)) {
+      const normalizedKey = keyMap[key] || key;
+      result[normalizedKey] = value;
+    }
+    return result;
+  };
+
+  const charKeyMap: Record<string, string> = { '姓名': 'name', '描述': 'description', '性格': 'personality', '能力': 'abilities', '称号': 'title', '身份': 'role', '背景': 'background' };
+  const locKeyMap: Record<string, string> = { '名称': 'name', '描述': 'description', '分类': 'category' };
+  const loreKeyMap: Record<string, string> = { '名称': 'name', '描述': 'description', '限制': 'constraints' };
+  const factionKeyMap: Record<string, string> = { '名称': 'name', '描述': 'description' };
+
+  const characters = mapped.characters.map(c => normalizeEntity(c, charKeyMap));
+  const locations = mapped.locations.map(l => normalizeEntity(l, locKeyMap));
+  const lores = mapped.lores.map(l => normalizeEntity(l, loreKeyMap));
+  const factions = mapped.factions.map(f => normalizeEntity(f, factionKeyMap));
 
   // Delete existing worldbuilding data for this project (regenerate)
   await db.faction.deleteMany({ where: { projectId: project.id } });

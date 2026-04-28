@@ -1,7 +1,7 @@
 {
   "name": "mojing-story-ai",
   "version": "1.0.0",
-  "description": "墨境 · AI网文创作平台 — NVIDIA NIM驱动的全流程AI网文创作引擎",
+  "description": "墨境 MoJing — AI驱动的全流程网文创作引擎 | 输入灵感，一键成书 | Next.js 16 + NVIDIA NIM + Prisma + Vercel",
   "private": true,
   "scripts": {
     "dev": "prisma generate --schema=prisma/schema.sqlite.prisma && next dev -p 3000 2>&1 | tee dev.log",

@@ -3,7 +3,7 @@ import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 import { buildStoryBibleContext, buildOutlineContext, buildRecentChaptersContext, getGenerateSystemPrompt } from '@/lib/ai-prompts';
 import { getNimModelId, DEFAULT_MODEL } from '@/lib/models';
-import { nvidiaNimGenerate } from '@/lib/nvidia-nim';
+import { nvidiaNimGenerateWithFallback } from '@/lib/nvidia-nim';
 
 // POST /api/ai/generate - Generate content
 export async function POST(request: NextRequest) {
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     // Call NVIDIA NIM API
     const nimModelId = getNimModelId(model || DEFAULT_MODEL);
     const maxTokens = ['outline', 'chapter', 'worldbuilding'].includes(type) ? 8192 : 4096;
-    const aiResponse = await nvidiaNimGenerate(
+    const { text: aiResponse } = await nvidiaNimGenerateWithFallback(
       nimModelId,
       systemPrompt,
       [{ role: 'user', content: userMessage }],

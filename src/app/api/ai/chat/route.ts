@@ -3,7 +3,7 @@ import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 import { buildStoryBibleContext, buildOutlineContext, buildRecentChaptersContext, getChatSystemPrompt } from '@/lib/ai-prompts';
 import { getNimModelId, DEFAULT_MODEL } from '@/lib/models';
-import { nvidiaNimGenerate } from '@/lib/nvidia-nim';
+import { nvidiaNimGenerateWithFallback } from '@/lib/nvidia-nim';
 
 // POST /api/ai/chat - Send a message and get AI response
 export async function POST(request: NextRequest) {
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     // Call NVIDIA NIM API
     const nimModelId = getNimModelId(model || DEFAULT_MODEL);
-    const aiResponse = await nvidiaNimGenerate(
+    const { text: aiResponse } = await nvidiaNimGenerateWithFallback(
       nimModelId,
       systemPrompt,
       messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),

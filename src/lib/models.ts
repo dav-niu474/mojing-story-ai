@@ -68,17 +68,16 @@ const CHINESE_WRITING_MODELS: AiModel[] = [
   {
     id: 'deepseek-v4-pro',
     nimModelId: 'deepseek-ai/deepseek-v4-pro',
-    name: 'DeepSeek V4 Pro',
+    name: 'DeepSeek V4 Pro ⚠️',
     provider: 'deepseek',
     providerLabel: '深度求索',
-    description: '深度求索最新Pro版，推理和创作能力顶尖，中文表达流畅，当前最稳定模型',
+    description: '深度求索最新Pro版，推理和创作能力顶尖，但当前不稳定可能超时',
     category: '中文创作推荐',
-    tags: ['推荐', '最新', '推理强', '稳定'],
+    tags: ['推荐', '最新', '推理强', '不稳定'],
     contextLength: 128000,
     maxTokens: 8192,
-    verified: true,
-    recommended: true,
-    status: 'active',
+    verified: false,
+    status: 'down',
   },
   {
     id: 'glm-5.1',
@@ -300,12 +299,13 @@ const CODE_REASONING_MODELS: AiModel[] = [
     name: 'Qwen 3.5 122B',
     provider: 'qwen',
     providerLabel: '通义千问',
-    description: '通义千问3.5系列，MoE架构高效推理，中文创作优秀',
-    category: '代码/推理',
-    tags: ['MoE', '稳定'],
+    description: '通义千问3.5系列，MoE架构高效推理，中文创作优秀，当前最稳定推荐',
+    category: '中文创作推荐',
+    tags: ['推荐', 'MoE', '稳定', '中文原生'],
     contextLength: 128000,
     maxTokens: 8192,
     verified: true,
+    recommended: true,
     status: 'active',
   },
   {
@@ -399,15 +399,28 @@ export function getNimModelId(internalId: string): string {
 }
 
 /**
- * Default model ID - changed from glm-5.1 to deepseek-v4-pro
- * because z-ai/glm-5.1 is currently down (timeout).
- * DeepSeek V4 Pro is the most stable and capable model for Chinese writing.
+ * Default model ID - changed to qwen3.5-122b
+ * because deepseek-v4-pro is currently down (timeout).
+ * Qwen 3.5 122B is Chinese-native, fast, and stable.
+ *
+ * Fallback chain: qwen3.5-122b → kimi-k2 → llama-3.1-405b → llama-3.3-70b
  */
-export const DEFAULT_MODEL = 'deepseek-v4-pro';
+export const DEFAULT_MODEL = 'qwen3.5-122b';
+
+/**
+ * Fallback model chain - if the primary model fails,
+ * try these models in order until one works.
+ */
+export const FALLBACK_MODELS = [
+  'qwen/qwen3.5-122b-a10b',
+  'moonshotai/kimi-k2-instruct',
+  'meta/llama-3.1-405b-instruct',
+  'meta/llama-3.3-70b-instruct',
+];
 
 /**
  * Get the default model for novel writing.
- * Returns DeepSeek V4 Pro as the current best stable model.
+ * Returns Qwen 3.5 122B as the current best stable model.
  */
 export function getDefaultModel(): AiModel {
   return AI_MODELS.find(m => m.id === DEFAULT_MODEL)!;

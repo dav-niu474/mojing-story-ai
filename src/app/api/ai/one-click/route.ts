@@ -3,7 +3,7 @@ import { db, ensureDbInitialized } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-utils';
 import { buildStoryBibleContext } from '@/lib/ai-prompts';
 import { getNimModelId, DEFAULT_MODEL } from '@/lib/models';
-import { nvidiaNimGenerate } from '@/lib/nvidia-nim';
+import { nvidiaNimGenerateWithFallback } from '@/lib/nvidia-nim';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -86,7 +86,10 @@ async function generateConcept(
 
 请以JSON格式输出。`;
 
-  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: 0.7, max_tokens: 4096 });
+  const { text: aiResponse, usedModel, fallbackUsed } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: 0.7, max_tokens: 4096 });
+  if (fallbackUsed) {
+    console.log(`[One-Click] Concept step: primary model failed, used fallback: ${usedModel}`);
+  }
   const parsed = parseJsonResponse(aiResponse);
 
   if (!parsed || typeof parsed !== 'object') {
@@ -153,7 +156,10 @@ ${setting ? '已有世界观参考：' + setting : ''}
 
 请以JSON格式输出。`;
 
-  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: 0.7, max_tokens: 8192 });
+  const { text: aiResponse, usedModel: usedModel2, fallbackUsed: fallbackUsed2 } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: 0.7, max_tokens: 8192 });
+  if (fallbackUsed2) {
+    console.log(`[One-Click] Worldbuilding step: primary model failed, used fallback: ${usedModel2}`);
+  }
   const parsed = parseJsonResponse(aiResponse);
 
   if (!parsed || typeof parsed !== 'object') {
@@ -315,7 +321,10 @@ ${storyBible}
 
 请以JSON格式输出。`;
 
-  const aiResponse = await nvidiaNimGenerate(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: 0.7, max_tokens: 8192 });
+  const { text: aiResponse, usedModel: usedModel3, fallbackUsed: fallbackUsed3 } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: 0.7, max_tokens: 8192 });
+  if (fallbackUsed3) {
+    console.log(`[One-Click] Outline step: primary model failed, used fallback: ${usedModel3}`);
+  }
   const parsed = parseJsonResponse(aiResponse);
 
   if (!parsed || typeof parsed !== 'object') {

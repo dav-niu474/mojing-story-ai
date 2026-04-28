@@ -6,12 +6,17 @@
  * Handles both standard and "thinking" models:
  * - Standard models: content in message.content
  * - Thinking models: content may be null, with reasoning in message.reasoning or message.reasoning_content
+ *
+ * Includes automatic model fallback: if the primary model times out or errors,
+ * it automatically tries the next model in the FALLBACK_MODELS chain.
  */
+
+import { FALLBACK_MODELS } from './models';
 
 const NVIDIA_NIM_BASE_URL = 'https://integrate.api.nvidia.com/v1';
 
-// Request timeout in milliseconds (30s for non-streaming)
-const REQUEST_TIMEOUT_MS = 60_000;
+// Request timeout in milliseconds (45s for non-streaming - enough for most models)
+const REQUEST_TIMEOUT_MS = 45_000;
 
 interface NimMessage {
   role: 'system' | 'user' | 'assistant';
@@ -166,6 +171,68 @@ export async function nvidiaNimGenerate(
   if (!message) return '';
 
   return extractMessageContent(message);
+}
+
+/**
+ * Generate with automatic model fallback.
+ *
+ * If the primary model fails (timeout, error, empty response),
+ * automatically tries the next model in the FALLBACK_MODELS chain.
+ * This ensures the pipeline never completely fails due to a single
+ * model being unavailable.
+ *
+ * @param primaryModel - The preferred NVIDIA NIM model ID
+ * @param systemPrompt - System prompt
+ * @param userMessages - User/assistant message history
+ * @param options - Generation options
+ * @returns The AI response text, plus metadata about which model was used
+ */
+export async function nvidiaNimGenerateWithFallback(
+  primaryModel: string,
+  systemPrompt: string,
+  userMessages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  options?: { temperature?: number; max_tokens?: number },
+): Promise<{ text: string; usedModel: string; fallbackUsed: boolean }> {
+  // Build the model chain: primary first, then fallbacks (excluding the primary if it's in the list)
+  const fallbackChain = [
+    primaryModel,
+    ...FALLBACK_MODELS.filter(m => m !== primaryModel),
+  ];
+
+  // Remove duplicates while preserving order
+  const uniqueChain = [...new Set(fallbackChain)];
+
+  const errors: string[] = [];
+
+  for (const modelId of uniqueChain) {
+    try {
+      console.log(`[NIM Fallback] Trying model: ${modelId}`);
+      const text = await nvidiaNimGenerate(modelId, systemPrompt, userMessages, options);
+
+      // Check if we got a meaningful response
+      if (text && text.trim().length > 0) {
+        const fallbackUsed = modelId !== primaryModel;
+        if (fallbackUsed) {
+          console.log(`[NIM Fallback] ✅ Fallback to ${modelId} succeeded (primary ${primaryModel} failed)`);
+        }
+        return { text, usedModel: modelId, fallbackUsed };
+      }
+
+      // Empty response - treat as failure for this model
+      errors.push(`${modelId}: returned empty response`);
+      console.warn(`[NIM Fallback] ⚠️ Model ${modelId} returned empty response, trying next...`);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      errors.push(`${modelId}: ${errorMsg}`);
+      console.warn(`[NIM Fallback] ⚠️ Model ${modelId} failed: ${errorMsg}, trying next...`);
+    }
+  }
+
+  // All models failed
+  throw new Error(
+    `All models failed in fallback chain. Errors:\n${errors.map((e, i) => `  ${i + 1}. ${e}`).join('\n')}\n\n` +
+    `Please try again later or select a different model manually.`
+  );
 }
 
 // ─── Streaming Support ─────────────────────────────────────────────

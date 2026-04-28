@@ -429,3 +429,32 @@ Stage Summary:
 - 新增功能：nvidiaNimGenerateWithFallback 自动回退机制
 - Vercel部署：https://mojing-story-ai.vercel.app 状态 READY
 - 可用模型：qwen3.5-122b, kimi-k2, llama-3.1-405b, llama-3.3-70b 等10个活跃模型
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: 修复Vercel生产环境一键创建失败 - 数据库表不存在+函数超时
+
+Work Log:
+- 诊断问题：Vercel生产环境报 "table public.novel_projects does not exist"
+- 根因1：Neon pooler端点(pgbouncer)不支持DDL操作，prisma db push在建表时静默失败
+- 根因2：运行时ensurePostgresTables用pooler连接做DDL也失败
+- 根因3：Vercel函数默认60s超时，3步AI调用需要更长时间
+- 修复1：db.ts - 添加ensurePostgresTables自动建表机制
+  - 优先使用mojing_POSTGRES_URL_NON_POOLING直连端点做DDL
+  - 回退到pooler连接尝试DDL
+  - 无条件CREATE TABLE IF NOT EXISTS（幂等安全）
+- 修复2：package.json - vercel-build使用Neon直连端点做db push
+- 修复3：one-click/route.ts + pipeline/route.ts - 设置maxDuration=300(5分钟)
+- 提交3次修复（8ab2b64, dacd3ee, b7d77f8, 7975eab）
+- Vercel部署4次，最终确认：
+  - /api/projects 返回空数组（表存在）
+  - 创建项目成功（数据库CRUD正常）
+  - 一键创建Step1(概念)已确认成功
+  - Step2/3需要前端逐步调用pipeline API（Vercel Hobby计划60s超时限制）
+
+Stage Summary:
+- 数据库表创建机制已完善（自动检测+DDL）
+- API基础功能（CRUD）正常工作
+- 一键创建需要前端配合：逐步骤调用pipeline API
+- 生产地址: https://mojing-story-ai.vercel.app

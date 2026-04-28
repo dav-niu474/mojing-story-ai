@@ -12,6 +12,7 @@ import {
   Check,
   RotateCcw,
   ChevronUp,
+  ChevronDown,
   Eye,
   Pencil,
   CheckCircle2,
@@ -19,6 +20,9 @@ import {
   FileText,
   Users,
   BookOpen,
+  Wand2,
+  Edit3,
+  Send,
 } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { api } from '@/lib/api'
@@ -27,7 +31,36 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { ModelSelector } from '@/components/ModelSelector'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
+// ─── Constants ──────────────────────────────────────────────────────────
+
+const GENRES = [
+  '玄幻', '都市', '仙侠', '科幻', '历史', '游戏',
+  '悬疑', '言情', '军事', '体育', '灵异', '二次元', '其他',
+]
+
+const WRITING_STYLES = [
+  '轻松幽默', '热血爽文', '细腻文艺', '悬疑紧张', '宏大史诗',
+]
+
+const EXAMPLE_PREMISES = [
+  '一个少年意外获得逆天修仙功法，从废材逆袭成为至高强者',
+  '都市白领重生回到2010年，利用前世记忆在商海纵横',
+  '地球突然进入灵气复苏时代，普通大学生觉醒异能守护城市',
+  '天才黑客穿越到赛博世界，用代码改写虚拟帝国命运',
+  '落魄书生偶得上古仙人传承，踏上修仙求道之路',
+  '游戏玩家被困在虚拟现实中，必须通关才能回到现实',
+]
 
 // ─── Pipeline Step Configuration ──────────────────────────────────────────
 
@@ -110,6 +143,226 @@ const PIPELINE_STEPS: PipelineStepConfig[] = [
   },
 ]
 
+// ─── Creative Input Section ────────────────────────────────────────────────
+
+interface CreativeInputSectionProps {
+  project: NovelProject
+  premise: string
+  setPremise: (v: string) => void
+  genre: string
+  setGenre: (v: string) => void
+  style: string
+  setStyle: (v: string) => void
+  isGenerating: boolean
+  onGenerate: () => void
+  conceptCompleted: boolean
+  onEditConcept: () => void
+}
+
+function CreativeInputSection({
+  project,
+  premise,
+  setPremise,
+  genre,
+  setGenre,
+  style,
+  setStyle,
+  isGenerating,
+  onGenerate,
+  conceptCompleted,
+  onEditConcept,
+}: CreativeInputSectionProps) {
+  const [showExamples, setShowExamples] = useState(false)
+
+  // If concept is already completed, show a compact view
+  if (conceptCompleted) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <Card className="border-emerald-200 dark:border-emerald-800/50 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-900/10 dark:to-teal-900/10">
+          <CardContent className="p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-sm">创意概念已生成</h3>
+                  {(project.genre || genre) && (
+                    <Badge variant="outline" className="text-xs">{project.genre || genre}</Badge>
+                  )}
+                  {(project.writingStyle || style) && (
+                    <Badge variant="outline" className="text-xs text-amber-700 dark:text-amber-400">{project.writingStyle || style}</Badge>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {project.premise || premise}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEditConcept}
+                className="flex-shrink-0"
+              >
+                <Edit3 className="h-3 w-3 mr-1" />
+                修改创意
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    )
+  }
+
+  // Main creative input UI (when concept is pending)
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="border-2 border-amber-200 dark:border-amber-800/50 shadow-lg shadow-amber-500/5 overflow-hidden">
+        <CardContent className="p-6">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 flex items-center justify-center shadow-md shadow-amber-500/20">
+              <Wand2 className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
+                输入你的故事灵感
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                AI将根据你的创意，自动生成概念、世界观和大纲
+              </p>
+            </div>
+          </div>
+
+          {/* Premise Input */}
+          <div className="mb-4">
+            <Label className="text-base font-semibold mb-2 block flex items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-amber-500" />
+              故事灵感
+              <span className="text-xs text-muted-foreground font-normal">（描述你心中的故事，越具体AI生成越好）</span>
+            </Label>
+            <Textarea
+              placeholder="例如：一个少年意外获得逆天修仙功法，从废材逆袭成为至高强者，却发现修仙界背后隐藏着一个惊天阴谋..."
+              rows={4}
+              value={premise}
+              onChange={(e) => setPremise(e.target.value)}
+              className="text-base resize-none border-amber-200 dark:border-amber-800/50 focus:border-amber-400 dark:focus:border-amber-600"
+              disabled={isGenerating}
+            />
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {premise.length > 0 ? `${premise.length} 字` : '还没有灵感？'}
+                </span>
+                {premise.length === 0 && (
+                  <button
+                    onClick={() => setShowExamples(!showExamples)}
+                    className="text-xs text-amber-600 dark:text-amber-400 hover:underline"
+                    disabled={isGenerating}
+                  >
+                    看看示例
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Example Premises */}
+          <AnimatePresence>
+            {showExamples && premise.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-4"
+              >
+                <div className="p-3 rounded-lg bg-amber-50/80 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30">
+                  <p className="text-xs text-muted-foreground mb-2">点击选择一个灵感：</p>
+                  <div className="flex flex-wrap gap-2">
+                    {EXAMPLE_PREMISES.map((example, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPremise(example)}
+                        disabled={isGenerating}
+                        className="px-3 py-1.5 text-xs rounded-full bg-white dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors disabled:opacity-50 text-left max-w-[260px] truncate"
+                      >
+                        {example.slice(0, 30)}...
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Options Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">类型偏好</Label>
+              <Select value={genre} onValueChange={setGenre} disabled={isGenerating}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="AI自动识别" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GENRES.map((g) => (
+                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">文风偏好</Label>
+              <Select value={style} onValueChange={setStyle} disabled={isGenerating}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="AI自动选择" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WRITING_STYLES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Generate Button */}
+          <Button
+            onClick={onGenerate}
+            disabled={!premise.trim() || isGenerating}
+            className="w-full h-12 text-base font-semibold bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-600 hover:via-orange-600 hover:to-red-600 text-white shadow-lg shadow-orange-500/25 disabled:opacity-50"
+          >
+            {isGenerating ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>AI正在生成创意概念...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                <span>开始AI创作</span>
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </div>
+            )}
+          </Button>
+
+          {!premise.trim() && !isGenerating && (
+            <p className="text-center text-xs text-muted-foreground mt-2">
+              输入灵感后，AI将自动生成故事概念并进入创作流程
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
+}
+
 // ─── Pipeline Step Card ───────────────────────────────────────────────────
 
 interface StepCardProps {
@@ -122,6 +375,7 @@ interface StepCardProps {
   onAccept: (step: PipelineStep) => void
   isGenerating: boolean
   canGenerate: boolean
+  isConceptStep?: boolean
 }
 
 function StepCard({
@@ -134,6 +388,7 @@ function StepCard({
   onAccept,
   isGenerating,
   canGenerate,
+  isConceptStep,
 }: StepCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -163,7 +418,6 @@ function StepCard({
 
   function handleEditSave() {
     setEditing(false)
-    // Accept with edited content
     onAccept(step.key)
   }
 
@@ -173,6 +427,9 @@ function StepCard({
     completed: '已完成',
     skipped: '已跳过',
   }
+
+  // Don't show concept step card - it's handled by CreativeInputSection
+  if (isConceptStep) return null
 
   return (
     <div className="relative">
@@ -236,7 +493,7 @@ function StepCard({
                 {isPending && canGenerate && (
                   <Button
                     onClick={handleGenerate}
-                    className={`bg-gradient-to-r ${step.color === 'text-amber-500' ? 'from-amber-500 to-orange-500' : step.color === 'text-violet-500' ? 'from-violet-500 to-purple-500' : step.color === 'text-emerald-500' ? 'from-emerald-500 to-teal-500' : 'from-orange-500 to-red-500'} text-white shadow-md`}
+                    className={`bg-gradient-to-r ${step.color === 'text-violet-500' ? 'from-violet-500 to-purple-500' : step.color === 'text-emerald-500' ? 'from-emerald-500 to-teal-500' : 'from-orange-500 to-red-500'} text-white shadow-md`}
                     size="sm"
                   >
                     <Sparkles className="h-4 w-4 mr-1" />
@@ -367,7 +624,6 @@ function QuickActionsPanel({ project, onNavigate }: QuickActionProps) {
     setAiLoading(action)
     try {
       if (action === 'write-next') {
-        // Find next unwritten chapter
         const chapters = await api.getChapters(project.id)
         const nextChapter = chapters.find((ch: { status: string; content: string | null }) => ch.status === 'planned' || !ch.content)
         if (nextChapter) {
@@ -528,6 +784,12 @@ export function CreationPipeline() {
   const [projectData, setProjectData] = useState<NovelProject | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Creative input state
+  const [premise, setPremise] = useState('')
+  const [genre, setGenre] = useState('')
+  const [style, setStyle] = useState('')
+  const [isEditingConcept, setIsEditingConcept] = useState(false)
+
   // Stats
   const [stats, setStats] = useState({
     characters: 0,
@@ -551,6 +813,11 @@ export function CreationPipeline() {
     try {
       const data = await api.getProject(project.id) as NovelProject
       setProjectData(data)
+
+      // Initialize creative input from existing project data
+      if (data.premise) setPremise(data.premise)
+      if (data.genre) setGenre(data.genre)
+      if (data.writingStyle) setStyle(data.writingStyle)
 
       // Update stats
       setStats({
@@ -613,6 +880,53 @@ export function CreationPipeline() {
     }
   }
 
+  // Handle concept generation from creative input
+  const handleConceptGenerate = useCallback(async () => {
+    if (!project || !premise.trim() || generatingStep) return
+
+    setGeneratingStep('concept')
+    setPipelineStatus({
+      ...pipelineStatus,
+      concept: 'generating',
+    })
+
+    try {
+      const input: Record<string, unknown> = {
+        premise: premise.trim(),
+        genre: genre || undefined,
+        style: style || undefined,
+      }
+
+      const result = await api.aiPipeline(project.id, 'concept', input, selectedModel)
+
+      // Update step result
+      const generatedText = formatStepResult('concept', result)
+      setStepResults(prev => ({
+        ...prev,
+        concept: generatedText,
+      }))
+
+      setPipelineStatus({
+        ...pipelineStatus,
+        concept: 'completed',
+      })
+
+      setIsEditingConcept(false)
+
+      // Reload project data to get updated stats
+      await loadProjectData()
+    } catch (err) {
+      console.error('Pipeline step concept failed:', err)
+      setPipelineStatus({
+        ...pipelineStatus,
+        concept: 'pending',
+      })
+      alert(`生成失败：${err instanceof Error ? err.message : '未知错误'}`)
+    } finally {
+      setGeneratingStep(null)
+    }
+  }, [project, premise, genre, style, generatingStep, pipelineStatus, selectedModel])
+
   const handleGenerate = useCallback(async (step: PipelineStep) => {
     if (!project || generatingStep) return
 
@@ -627,7 +941,7 @@ export function CreationPipeline() {
 
       switch (step) {
         case 'concept':
-          input = { premise: project.premise || project.description || '' }
+          input = { premise: premise || project.premise || project.description || '' }
           break
         case 'worldbuilding':
           input = { concept: project.premise || project.description || '' }
@@ -635,8 +949,7 @@ export function CreationPipeline() {
         case 'outline':
           input = {}
           break
-        case 'writing':
-          // Find first planned chapter
+        case 'writing': {
           const chapters = await api.getChapters(project.id)
           const nextChapter = chapters.find((ch: { status: string }) => ch.status === 'planned')
           if (nextChapter) {
@@ -645,11 +958,11 @@ export function CreationPipeline() {
             throw new Error('没有找到待写作的章节')
           }
           break
+        }
       }
 
       const result = await api.aiPipeline(project.id, step, input, selectedModel)
 
-      // Update step result
       const generatedText = formatStepResult(step, result)
       setStepResults(prev => ({
         ...prev,
@@ -661,7 +974,6 @@ export function CreationPipeline() {
         [step]: 'completed',
       })
 
-      // Reload project data to get updated stats
       await loadProjectData()
     } catch (err) {
       console.error(`Pipeline step ${step} failed:`, err)
@@ -673,15 +985,18 @@ export function CreationPipeline() {
     } finally {
       setGeneratingStep(null)
     }
-  }, [project, generatingStep, pipelineStatus, selectedModel])
+  }, [project, premise, generatingStep, pipelineStatus, selectedModel])
 
   const handleRegenerate = useCallback(async (step: PipelineStep) => {
+    if (step === 'concept') {
+      setIsEditingConcept(true)
+      return
+    }
     await handleGenerate(step)
   }, [handleGenerate])
 
   const handleAccept = useCallback((_step: PipelineStep) => {
     // Content is already auto-saved by the pipeline API
-    // Just move to the next step
   }, [])
 
   function formatStepResult(step: PipelineStep, result: Record<string, unknown>): string {
@@ -735,12 +1050,13 @@ export function CreationPipeline() {
     )
   }
 
+  const conceptCompleted = pipelineStatus['concept'] === 'completed'
+
   // Determine which step is the next available one
   const getNextAvailableStep = (): PipelineStep | null => {
     for (const step of PIPELINE_STEPS) {
       const status = pipelineStatus[step.key]
       if (status === 'pending' || !status) {
-        // Check if previous step is completed
         const prevIndex = PIPELINE_STEPS.findIndex(s => s.key === step.key) - 1
         if (prevIndex < 0 || pipelineStatus[PIPELINE_STEPS[prevIndex].key] === 'completed') {
           return step.key
@@ -759,30 +1075,13 @@ export function CreationPipeline() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6"
         >
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-2xl font-bold text-foreground">{project.title}</h2>
-                {project.genre && (
-                  <Badge variant="outline" className="text-xs">
-                    {project.genre}
-                  </Badge>
-                )}
-                {project.writingStyle && (
-                  <Badge variant="outline" className="text-xs text-amber-700 dark:text-amber-400">
-                    {project.writingStyle}
-                  </Badge>
-                )}
-              </div>
-              {project.premise && (
-                <div className="p-3 rounded-lg bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/30 max-w-2xl">
-                  <p className="text-sm text-amber-800 dark:text-amber-300">
-                    <span className="font-semibold">核心设定：</span>
-                    {project.premise}
-                  </p>
-                </div>
+              <h2 className="text-2xl font-bold text-foreground">{project.title}</h2>
+              {project.description && (
+                <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
               )}
             </div>
             <div className="flex-shrink-0">
@@ -795,7 +1094,23 @@ export function CreationPipeline() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Pipeline Steps - Main Column */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-2 mb-2">
+            {/* Step 0: Creative Input (always at top) */}
+            <CreativeInputSection
+              project={project}
+              premise={premise}
+              setPremise={setPremise}
+              genre={genre}
+              setGenre={setGenre}
+              style={style}
+              setStyle={setStyle}
+              isGenerating={generatingStep === 'concept'}
+              onGenerate={handleConceptGenerate}
+              conceptCompleted={conceptCompleted && !isEditingConcept}
+              onEditConcept={() => setIsEditingConcept(true)}
+            />
+
+            {/* Pipeline Steps Header */}
+            <div className="flex items-center gap-2 pt-2">
               <Sparkles className="h-5 w-5 text-amber-500" />
               <h3 className="text-lg font-semibold">创作流程</h3>
               {nextStep && (
@@ -805,21 +1120,52 @@ export function CreationPipeline() {
               )}
             </div>
 
-            {PIPELINE_STEPS.map((step, index) => (
+            {/* Concept mini-indicator (when completed, show a compact line) */}
+            {conceptCompleted && !isEditingConcept && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30"
+              >
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                <span className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">创意概念</span>
+                  {' — 已完成'}
+                  {project.genre && ` · ${project.genre}`}
+                  {project.writingStyle && ` · ${project.writingStyle}`}
+                </span>
+                <button
+                  onClick={() => setIsEditingConcept(true)}
+                  className="ml-auto text-xs text-amber-600 dark:text-amber-400 hover:underline flex-shrink-0"
+                >
+                  修改
+                </button>
+              </motion.div>
+            )}
+
+            {/* Pipeline Steps (skip concept since it's handled above) */}
+            {PIPELINE_STEPS.filter(s => s.key !== 'concept').map((step, index) => (
               <StepCard
                 key={step.key}
                 step={step}
                 status={pipelineStatus[step.key] || 'pending'}
-                isLast={index === PIPELINE_STEPS.length - 1}
+                isLast={index === PIPELINE_STEPS.length - 2} // -2 because we filtered out 'concept'
                 generatedContent={stepResults[step.key] || null}
                 onGenerate={handleGenerate}
                 onRegenerate={handleRegenerate}
                 onAccept={handleAccept}
                 isGenerating={generatingStep === step.key}
                 canGenerate={
-                  index === 0
-                    ? true
-                    : pipelineStatus[PIPELINE_STEPS[index - 1].key] === 'completed'
+                  // For worldbuilding, concept must be completed
+                  step.key === 'worldbuilding'
+                    ? conceptCompleted
+                    : // For outline, worldbuilding must be completed
+                      step.key === 'outline'
+                        ? pipelineStatus['worldbuilding'] === 'completed'
+                        : // For writing, outline must be completed
+                          step.key === 'writing'
+                            ? pipelineStatus['outline'] === 'completed'
+                            : true
                 }
               />
             ))}

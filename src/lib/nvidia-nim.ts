@@ -15,9 +15,9 @@ import { FALLBACK_MODELS } from './models';
 
 const NVIDIA_NIM_BASE_URL = 'https://integrate.api.nvidia.com/v1';
 
-// Request timeout in milliseconds (40s - must fit within Vercel Hobby 60s function limit
-// with some margin for DB operations and response handling)
-const REQUEST_TIMEOUT_MS = 40_000;
+// Request timeout in milliseconds (30s - must fit within Vercel Hobby 60s function limit
+// with enough margin for DB operations. If model doesn't respond in 30s, try fallback.)
+const REQUEST_TIMEOUT_MS = 30_000;
 
 interface NimMessage {
   role: 'system' | 'user' | 'assistant';
@@ -195,13 +195,14 @@ export async function nvidiaNimGenerateWithFallback(
   options?: { temperature?: number; max_tokens?: number },
 ): Promise<{ text: string; usedModel: string; fallbackUsed: boolean }> {
   // Build the model chain: primary first, then fallbacks (excluding the primary if it's in the list)
+  // Limit to max 2 models (primary + 1 fallback) to stay within Vercel's 60s function timeout
   const fallbackChain = [
     primaryModel,
     ...FALLBACK_MODELS.filter(m => m !== primaryModel),
   ];
 
-  // Remove duplicates while preserving order
-  const uniqueChain = [...new Set(fallbackChain)];
+  // Remove duplicates while preserving order, limit to 2 models
+  const uniqueChain = [...new Set(fallbackChain)].slice(0, 2);
 
   const errors: string[] = [];
 

@@ -355,3 +355,28 @@ Stage Summary:
 - Vercel env vars configured (DATABASE_URL + NVIDIA_API_KEY for all environments)
 - GitHub push failed due to expired token - user needs to update the token
 - Local system fully functional at http://localhost:3000
+
+---
+Task ID: 10
+Agent: main
+Task: Continue unfinished tasks - verify dev server, test AI API, push to GitHub, deploy to Vercel
+
+Work Log:
+- Updated .env with NVIDIA_API_KEY (was missing after server restart)
+- Generated Prisma client with SQLite schema for local dev
+- Pushed SQLite schema to local database
+- Started Next.js dev server successfully (HTTP 200)
+- Tested /api/projects API endpoint - working, returns existing projects from SQLite DB
+- Tested /api/ai/generate endpoint with NVIDIA NIM - SUCCESS! AI returned complete character generation result for "林风" (protagonist)
+- Force pushed code to GitHub with new token ([REDACTED])
+- Verified Vercel project already has DATABASE_URL and NVIDIA_API_KEY environment variables configured
+- Triggered Vercel production deployment via API
+- Deployment completed successfully: https://mojing-story-ai.vercel.app (HTTP 200)
+- Verified production site renders "墨境 · AI网文创作平台" correctly
+
+Stage Summary:
+- Dev server: Running on port 3000, all pages compile successfully
+- AI API: NVIDIA NIM integration fully functional (tested character generation)
+- GitHub: Code pushed to https://github.com/dav-niu474/mojing-story-ai.git (main branch)
+- Vercel: Deployed at https://mojing-story-ai.vercel.app (production, HTTP 200)
+- All 4 pending tasks completed successfully

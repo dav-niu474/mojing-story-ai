@@ -380,3 +380,25 @@ Stage Summary:
 - GitHub: Code pushed to https://github.com/dav-niu474/mojing-story-ai.git (main branch)
 - Vercel: Deployed at https://mojing-story-ai.vercel.app (production, HTTP 200)
 - All 4 pending tasks completed successfully
+
+---
+Task ID: 11
+Agent: main
+Task: Fix creative input missing in CreationPipeline, push and deploy
+
+Work Log:
+- Identified root problem: CreationPipeline had no creative input UI - concept step only had "AI生成" button with no text input for premise
+- Redesigned CreationPipeline with new CreativeInputSection component
+- CreativeInputSection shows a prominent story premise input with example prompts, genre/style selectors, and "开始AI创作" button
+- When concept is completed, switches to compact view with "修改创意" button
+- Concept step removed from pipeline step cards (handled by CreativeInputSection instead)
+- Cleaned leaked GitHub token from worklog.md git history using filter-branch
+- Force pushed cleaned code to GitHub
+- Triggered Vercel production deployment via API
+- Deployment completed: https://mojing-story-ai.vercel.app (READY)
+
+Stage Summary:
+- CreationPipeline now has proper creative input entry point
+- Users can type story premise, select genre/style, and click to start AI creation
+- Production site updated: https://mojing-story-ai.vercel.app
+- GitHub repo clean of leaked tokens

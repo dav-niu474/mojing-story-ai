@@ -26,23 +26,49 @@ let tablesEnsured = false
 /**
  * Ensure database connection is ready and tables exist.
  * Called at the start of every API route.
+ *
+ * Optimization: Instead of running all DDL on every cold start,
+ * we first check if a core table exists. If it does, we skip DDL
+ * entirely (tables were created by `prisma db push` during build).
+ * Only if the table doesn't exist do we run the full DDL suite.
  */
 export async function ensureDbInitialized(): Promise<void> {
+  if (tablesEnsured) return
+
   try {
+    // Quick connection check
     await db.$queryRaw`SELECT 1`
   } catch (error) {
     console.error('[DB] Connection failed:', error)
     throw new Error('Database connection failed. Please check your DATABASE_URL.')
   }
 
-  if (tablesEnsured) return
-
   const isPostgres = (process.env.DATABASE_URL || '').startsWith('postgresql')
   if (isPostgres) {
-    await ensurePostgresTables()
+    // Check if core table exists before running DDL
+    const tablesExist = await checkCoreTablesExist()
+    if (!tablesExist) {
+      console.log('[DB] Core tables not found, running DDL...')
+      await ensurePostgresTables()
+    } else {
+      console.log('[DB] ✅ Core tables exist, skipping DDL')
+    }
   }
 
   tablesEnsured = true
+}
+
+/**
+ * Quick check if the core novel_projects table exists.
+ * This is much faster than running all DDL statements.
+ */
+async function checkCoreTablesExist(): Promise<boolean> {
+  try {
+    await db.$queryRaw`SELECT id FROM novel_projects LIMIT 1`
+    return true
+  } catch {
+    return false
+  }
 }
 
 /**

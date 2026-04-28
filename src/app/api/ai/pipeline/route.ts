@@ -290,97 +290,82 @@ ${project.setting ? '已有世界观参考：' + project.setting : ''}
 
   const data = parsed as Record<string, unknown>;
 
-  // Persist characters
-  const savedCharacters = [];
+  // Use batch inserts for better performance (avoid N individual DB round-trips)
   const characters = (data.characters as Array<Record<string, unknown>>) || [];
-  for (let i = 0; i < characters.length; i++) {
-    const c = characters[i];
-    const character = await db.character.create({
-      data: {
-        projectId: project.id,
-        name: (c.name as string) || `角色${i + 1}`,
-        role: (c.role as string) || 'supporting',
-        title: (c.title as string) || null,
-        description: (c.description as string) || null,
-        personality: (c.personality as string) || null,
-        background: (c.background as string) || null,
-        abilities: (c.abilities as string) || null,
-        relationships: (c.relationships as string) || null,
-        motivation: (c.motivation as string) || null,
-        arc: (c.arc as string) || null,
-        sortOrder: i,
-      },
-    });
-    savedCharacters.push(character);
-  }
-
-  // Persist locations
-  const savedLocations = [];
   const locations = (data.locations as Array<Record<string, unknown>>) || [];
-  for (let i = 0; i < locations.length; i++) {
-    const l = locations[i];
-    const location = await db.location.create({
-      data: {
-        projectId: project.id,
-        name: (l.name as string) || `地点${i + 1}`,
-        category: (l.category as string) || null,
-        description: (l.description as string) || null,
-        history: (l.history as string) || null,
-        features: (l.features as string) || null,
-        atmosphere: (l.atmosphere as string) || null,
-        sortOrder: i,
-      },
-    });
-    savedLocations.push(location);
-  }
-
-  // Persist lore items
-  const savedLore = [];
   const lores = (data.lores as Array<Record<string, unknown>>) || [];
-  for (let i = 0; i < lores.length; i++) {
-    const l = lores[i];
-    const lore = await db.loreItem.create({
-      data: {
-        projectId: project.id,
-        name: (l.name as string) || `设定${i + 1}`,
-        category: (l.category as string) || null,
-        description: (l.description as string) || null,
-        details: (l.details as string) || null,
-        constraints: (l.constraints as string) || null,
-        sortOrder: i,
-      },
-    });
-    savedLore.push(lore);
-  }
-
-  // Persist factions
-  const savedFactions = [];
   const factions = (data.factions as Array<Record<string, unknown>>) || [];
-  for (let i = 0; i < factions.length; i++) {
-    const f = factions[i];
-    const faction = await db.faction.create({
-      data: {
-        projectId: project.id,
-        name: (f.name as string) || `势力${i + 1}`,
-        description: (f.description as string) || null,
-        goals: (f.goals as string) || null,
-        members: (f.members as string) || null,
-        territory: (f.territory as string) || null,
-        power: (f.power as string) || null,
-        sortOrder: i,
-      },
-    });
-    savedFactions.push(faction);
-  }
+
+  // Delete existing worldbuilding data for this project (regenerate)
+  await db.faction.deleteMany({ where: { projectId: project.id } });
+  await db.loreItem.deleteMany({ where: { projectId: project.id } });
+  await db.location.deleteMany({ where: { projectId: project.id } });
+  await db.character.deleteMany({ where: { projectId: project.id } });
+
+  // Batch create all entities using createMany
+  const charCount = await db.character.createMany({
+    data: characters.map((c, i) => ({
+      projectId: project.id,
+      name: (c.name as string) || `角色${i + 1}`,
+      role: (c.role as string) || 'supporting',
+      title: (c.title as string) || null,
+      description: (c.description as string) || null,
+      personality: (c.personality as string) || null,
+      background: (c.background as string) || null,
+      abilities: (c.abilities as string) || null,
+      relationships: (c.relationships as string) || null,
+      motivation: (c.motivation as string) || null,
+      arc: (c.arc as string) || null,
+      sortOrder: i,
+    })),
+  });
+
+  const locCount = await db.location.createMany({
+    data: locations.map((l, i) => ({
+      projectId: project.id,
+      name: (l.name as string) || `地点${i + 1}`,
+      category: (l.category as string) || null,
+      description: (l.description as string) || null,
+      history: (l.history as string) || null,
+      features: (l.features as string) || null,
+      atmosphere: (l.atmosphere as string) || null,
+      sortOrder: i,
+    })),
+  });
+
+  const loreCount = await db.loreItem.createMany({
+    data: lores.map((l, i) => ({
+      projectId: project.id,
+      name: (l.name as string) || `设定${i + 1}`,
+      category: (l.category as string) || null,
+      description: (l.description as string) || null,
+      details: (l.details as string) || null,
+      constraints: (l.constraints as string) || null,
+      sortOrder: i,
+    })),
+  });
+
+  const factionCount = await db.faction.createMany({
+    data: factions.map((f, i) => ({
+      projectId: project.id,
+      name: (f.name as string) || `势力${i + 1}`,
+      description: (f.description as string) || null,
+      goals: (f.goals as string) || null,
+      members: (f.members as string) || null,
+      territory: (f.territory as string) || null,
+      power: (f.power as string) || null,
+      sortOrder: i,
+    })),
+  });
 
   return {
     step: 'worldbuilding',
     generated: data,
     saved: {
-      characters: savedCharacters,
-      locations: savedLocations,
-      lore: savedLore,
-      factions: savedFactions,
+      characters: { count: charCount.count },
+      locations: { count: locCount.count },
+      lore: { count: loreCount.count },
+      factions: { count: factionCount.count },
     },
   };
 }
@@ -447,14 +432,25 @@ ${existingOutline ? '=== 已有大纲 ===\n' + existingOutline : ''}
 
   const data = parsed as Record<string, unknown>;
 
-  // Persist outlines and their chapters
-  const savedOutlines = [];
-  const savedChapters = [];
+  // Delete existing outlines and chapters (regenerate)
+  await db.chapter.deleteMany({ where: { projectId: project.id } });
+  await db.outline.deleteMany({ where: { projectId: project.id } });
+
+  // Create outlines first (need their IDs for chapter foreign keys)
   const outlines = (data.outlines as Array<Record<string, unknown>>) || [];
+  const savedOutlines = [];
+  const allChapterData: Array<{
+    projectId: string;
+    outlineId: string;
+    title: string;
+    summary: string | null;
+    beats: string | null;
+    status: string;
+    sortOrder: number;
+  }> = [];
 
   for (let oi = 0; oi < outlines.length; oi++) {
     const o = outlines[oi];
-
     const keyEvents = Array.isArray(o.keyEvents) ? (o.keyEvents as string[]).join('\n') : (o.keyEvents as string) || null;
 
     const outline = await db.outline.create({
@@ -469,31 +465,33 @@ ${existingOutline ? '=== 已有大纲 ===\n' + existingOutline : ''}
     });
     savedOutlines.push(outline);
 
-    // Persist chapters within this outline
+    // Collect chapter data for batch insert
     const chapters = (o.chapters as Array<Record<string, unknown>>) || [];
     for (let ci = 0; ci < chapters.length; ci++) {
       const ch = chapters[ci];
-      const chapter = await db.chapter.create({
-        data: {
-          projectId: project.id,
-          outlineId: outline.id,
-          title: (ch.title as string) || `第${ci + 1}章`,
-          summary: (ch.summary as string) || null,
-          beats: (ch.beats as string) || null,
-          status: 'planned',
-          sortOrder: ci,
-        },
+      allChapterData.push({
+        projectId: project.id,
+        outlineId: outline.id,
+        title: (ch.title as string) || `第${ci + 1}章`,
+        summary: (ch.summary as string) || null,
+        beats: (ch.beats as string) || null,
+        status: 'planned',
+        sortOrder: ci,
       });
-      savedChapters.push(chapter);
     }
   }
+
+  // Batch create all chapters
+  const chapterResult = allChapterData.length > 0
+    ? await db.chapter.createMany({ data: allChapterData })
+    : { count: 0 };
 
   return {
     step: 'outline',
     generated: data,
     saved: {
-      outlines: savedOutlines,
-      chapters: savedChapters,
+      outlines: { count: savedOutlines.length },
+      chapters: { count: chapterResult.count },
     },
   };
 }

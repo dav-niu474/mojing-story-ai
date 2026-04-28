@@ -5,6 +5,9 @@ import { buildStoryBibleContext, buildOutlineContext, buildRecentChaptersContext
 import { getNimModelId, DEFAULT_MODEL } from '@/lib/models';
 import { nvidiaNimGenerateWithFallback } from '@/lib/nvidia-nim';
 
+// Set max duration for Vercel serverless function
+export const maxDuration = 60;
+
 // POST /api/ai/generate - Generate content
 export async function POST(request: NextRequest) {
   try {

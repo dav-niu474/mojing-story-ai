@@ -5,8 +5,8 @@ import { buildStoryBibleContext } from '@/lib/ai-prompts';
 import { getNimModelId, DEFAULT_MODEL } from '@/lib/models';
 import { nvidiaNimGenerateWithFallback } from '@/lib/nvidia-nim';
 
-// Set max duration for Vercel serverless function (up to 300s on Pro, 60s on Hobby)
-export const maxDuration = 300; // 5 minutes
+// Set max duration for Vercel serverless function (60s on Hobby, 300s on Pro)
+export const maxDuration = 60;
 
 // ─── Types ───────────────────────────────────────────────────────────────
 

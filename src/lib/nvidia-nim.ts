@@ -15,8 +15,9 @@ import { FALLBACK_MODELS } from './models';
 
 const NVIDIA_NIM_BASE_URL = 'https://integrate.api.nvidia.com/v1';
 
-// Request timeout in milliseconds (45s for non-streaming - enough for most models)
-const REQUEST_TIMEOUT_MS = 45_000;
+// Request timeout in milliseconds (40s - must fit within Vercel Hobby 60s function limit
+// with some margin for DB operations and response handling)
+const REQUEST_TIMEOUT_MS = 40_000;
 
 interface NimMessage {
   role: 'system' | 'user' | 'assistant';

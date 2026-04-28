@@ -6,7 +6,8 @@ import { getNimModelId, DEFAULT_MODEL } from '@/lib/models';
 import { nvidiaNimGenerateWithFallback } from '@/lib/nvidia-nim';
 
 // Set max duration for Vercel serverless function
-export const maxDuration = 300;
+// Hobby plan max is 60s; Pro plan allows up to 300s
+export const maxDuration = 60;
 
 // ─── Types ───────────────────────────────────────────────────────────────
 

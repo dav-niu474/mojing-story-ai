@@ -155,37 +155,44 @@ export function ProjectList() {
     setOneClickCreating(true)
 
     try {
+      // Step 0: Create the project first
+      const projectTitle = premise.trim().length > 20 ? premise.trim().slice(0, 20) + '...' : premise.trim()
+      const project = await api.createProject({
+        title: projectTitle,
+        genre: genre || null,
+        writingStyle: style || null,
+        premise: premise.trim(),
+        targetWords: (parseInt(targetChapters) || 10) * 3000,
+        status: 'draft',
+      }) as NovelProject
+
+      const projectId = project.id
+
       // Step 1: Generating concept
       setOneClickStepIndex(0)
       setOneClickProgress(ONE_CLICK_STEPS[0].label)
-      await sleep(500)
+      await api.aiPipeline(projectId, 'concept', {
+        premise: premise.trim(),
+        genre: genre || undefined,
+        style: style || undefined,
+      }, selectedModel)
 
       // Step 2: World building
       setOneClickStepIndex(1)
       setOneClickProgress(ONE_CLICK_STEPS[1].label)
+      await api.aiPipeline(projectId, 'worldbuilding', {}, selectedModel)
 
       // Step 3: Outline
       setOneClickStepIndex(2)
       setOneClickProgress(ONE_CLICK_STEPS[2].label)
-
-      // Call one-click API
-      const result = await api.aiOneClick(
-        premise.trim(),
-        genre || undefined,
-        style || undefined,
-        selectedModel,
-        parseInt(targetChapters) || 10,
-      )
+      await api.aiPipeline(projectId, 'outline', {}, selectedModel)
 
       // Reload projects
       await loadProjects()
 
       // Navigate to the new project
-      const newProject = result.project as NovelProject
-      if (newProject) {
-        setCurrentProject(newProject)
-        setCurrentView('pipeline')
-      }
+      setCurrentProject(project)
+      setCurrentView('pipeline')
 
       // Reset form
       setPremise('')
@@ -194,6 +201,8 @@ export function ProjectList() {
       setTargetChapters('10')
     } catch (err) {
       console.error('One-click creation failed:', err)
+      // Reload projects anyway since partial creation may have succeeded
+      await loadProjects()
       alert('一键创建失败，请重试。错误：' + (err instanceof Error ? err.message : '未知错误'))
     } finally {
       setOneClickCreating(false)

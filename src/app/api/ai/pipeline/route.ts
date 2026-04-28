@@ -140,34 +140,24 @@ async function handleConcept(
     throw new Error('concept步骤需要提供premise参数（故事前提）');
   }
 
-  const systemPrompt = `你是一个专业的网文创意策划师。根据给定的故事前提，生成完整的故事概念框架。
+  const systemPrompt = `你是网文创意策划师。根据故事前提生成概念框架。
 
-要求：
-1. 分析故事类型和子类型
-2. 提炼核心主题（2-4个）
-3. 设计世界观设定概述
-4. 构建核心冲突
-5. 确定故事基调和风格
-
-输出格式为JSON：
+输出JSON格式（每字段1-2句话）：
 {
-  "concept": "故事概念概述（200-500字）",
-  "genre": "类型（如：玄幻、都市、科幻、仙侠等）",
-  "subGenre": "子类型（如：热血升级、系统流、重生流等）",
-  "themes": ["主题1", "主题2", "主题3"],
-  "setting": "世界观设定概述（100-300字）",
-  "conflicts": ["核心冲突1", "核心冲突2"],
-  "writingStyle": "推荐文风（如：热血升级、暗黑写实、轻松幽默等）"
+  "concept": "故事概念概述",
+  "genre": "类型",
+  "subGenre": "子类型",
+  "themes": ["主题1", "主题2"],
+  "setting": "世界观概述",
+  "conflicts": ["冲突1", "冲突2"],
+  "writingStyle": "推荐文风"
 }`;
 
-  const userMessage = `请根据以下故事前提，生成完整的故事概念框架：
+  const userMessage = `故事前提：${premise}
+${project.genre ? '类型参考：' + project.genre : ''}
+${project.writingStyle ? '文风参考：' + project.writingStyle : ''}
 
-故事前提：${premise}
-
-${project.genre ? '已有类型参考：' + project.genre : ''}
-${project.writingStyle ? '已有文风参考：' + project.writingStyle : ''}
-
-请以JSON格式输出。`;
+请输出JSON。`;
 
   const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens });
   const parsed = parseJsonResponse(aiResponse);
@@ -339,46 +329,27 @@ async function handleOutline(
 ) {
   const { storyBible, outline: existingOutline } = buildContextFromProject(project);
 
-  const systemPrompt = `你是一个专业的网文大纲创作者。根据给定的世界观设定，生成完整的大纲结构。
+  const systemPrompt = `你是网文大纲创作者。根据世界观设定生成精简大纲。
 
-要求：
-1. 按照3-5幕结构组织大纲
-2. 每幕有明确的核心冲突和解决方案
-3. 标注关键转折点和爽点
-4. 每幕包含5-15个章节
-5. 节奏要有起伏，遵循"三章一小爽，十章一大爽"
-6. 每个章节有概要和场景节拍提示
-7. 伏笔和回收要清晰标注
-
-输出格式为JSON：
+输出JSON格式：
 {
   "outlines": [
     {
-      "title": "卷/幕标题",
-      "type": "act|volume|arc",
-      "description": "概述（100-200字）",
-      "keyEvents": ["关键事件1", "关键事件2"],
+      "title": "幕标题",
+      "type": "act",
+      "keyEvents": ["关键事件1"],
       "chapters": [
-        {
-          "title": "章节标题",
-          "summary": "章节概要（50-100字）",
-          "beats": "场景节拍提示"
-        }
+        {"title": "章节标题", "summary": "概要一句话"}
       ]
     }
   ]
-}`;
+}
 
-  const userMessage = `请根据以下作品设定，生成完整的大纲结构：
+要求：2-3幕，每幕3-5章，总计6-15章。每字段1句话，不要写太长。`;
 
-=== 作品设定 ===
-${storyBible}
+  const userMessage = `作品设定：${storyBible.slice(0, 1500)}
 
-${existingOutline ? '=== 已有大纲 ===\n' + existingOutline : ''}
-
-请生成包含3-5幕的完整大纲，每幕5-15章，总计30-80章。
-
-请以JSON格式输出。`;
+请输出精简的JSON格式大纲。`;
 
   const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 4096 });
   const parsed = parseJsonResponse(aiResponse);

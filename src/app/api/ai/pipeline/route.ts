@@ -213,75 +213,32 @@ async function handleWorldbuilding(
   const concept = (input.concept as string) || project.premise || project.description || '';
   const genre = project.genre || '玄幻';
 
-  const systemPrompt = `你是一个专业的网文世界观设计师。根据给定的故事概念和类型，创建完整的世界观设定。
+  const systemPrompt = `你是网文世界观设计师。根据故事概念创建精简世界观设定。
 
-要求：
-1. 设计3-5个核心角色，包含主角、反派和重要配角
-2. 设计2-3个关键地点
-3. 设计2-3个核心世界观规则/设定
-4. 设计1-2个势力阵营
-5. 所有设定必须有内在逻辑，互相支撑
-6. 力量体系要有清晰的等级和晋升路径
-7. 设定要有代价和限制
-
-输出格式为JSON：
+输出JSON格式（每个字段尽量简短，1-2句话即可）：
 {
   "characters": [
-    {
-      "name": "角色名",
-      "role": "protagonist|antagonist|supporting|minor",
-      "title": "称号",
-      "description": "外貌描述",
-      "personality": "性格特征",
-      "background": "背景故事",
-      "abilities": "能力/技能",
-      "relationships": "人物关系",
-      "motivation": "动机/目标",
-      "arc": "人物弧光"
-    }
+    {"name":"角色名","role":"protagonist|antagonist|supporting","description":"简短描述","personality":"性格","abilities":"能力"}
   ],
   "locations": [
-    {
-      "name": "地点名",
-      "category": "分类（如：城市、秘境、宗门、战场等）",
-      "description": "描述",
-      "history": "历史",
-      "features": "特色",
-      "atmosphere": "氛围"
-    }
+    {"name":"地点名","description":"简短描述"}
   ],
   "lores": [
-    {
-      "name": "设定名",
-      "category": "分类（如：力量体系、种族、神器、规则等）",
-      "description": "描述",
-      "details": "详细规则/机制",
-      "constraints": "限制/代价"
-    }
+    {"name":"设定名","description":"简短描述","constraints":"限制"}
   ],
   "factions": [
-    {
-      "name": "势力名",
-      "description": "描述",
-      "goals": "目标",
-      "members": "核心成员",
-      "territory": "领地",
-      "power": "实力"
-    }
+    {"name":"势力名","description":"简短描述"}
   ]
-}`;
+}
 
-  const userMessage = `请根据以下信息，创建完整的世界观设定：
+要求：3-4个角色，2-3个地点，2-3个设定，1-2个势力。每个字段1-2句话，不要写太长。`;
 
-故事概念：${concept}
+  const userMessage = `故事概念：${concept}
 类型：${genre}
-${project.setting ? '已有世界观参考：' + project.setting : ''}
 
-请确保所有角色、地点、设定和势力之间有有机联系，构成一个完整的世界观体系。
+请输出精简的JSON格式世界观设定。`;
 
-请以JSON格式输出。`;
-
-  const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 8192 });
+  const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 4096 });
   const parsed = parseJsonResponse(aiResponse);
 
   if (!parsed || typeof parsed !== 'object') {
@@ -423,7 +380,7 @@ ${existingOutline ? '=== 已有大纲 ===\n' + existingOutline : ''}
 
 请以JSON格式输出。`;
 
-  const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 8192 });
+  const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 4096 });
   const parsed = parseJsonResponse(aiResponse);
 
   if (!parsed || typeof parsed !== 'object') {
@@ -589,7 +546,7 @@ ${chaptersList}
 
 请以JSON格式输出。`;
 
-  const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 8192 });
+  const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 4096 });
   const parsed = parseJsonResponse(aiResponse);
 
   if (!parsed || typeof parsed !== 'object') {
@@ -701,7 +658,7 @@ ${previousChapter.content ? '正文（末尾500字）：\n' + previousChapter.co
 
 请直接输出章节正文。`;
 
-  const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 8192 });
+  const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 4096 });
 
   const wordCount = countWords(aiResponse);
 
@@ -803,7 +760,7 @@ ${chapter.content}
 
 请直接输出润色后的完整章节文本。`;
 
-  const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 8192 });
+  const { text: aiResponse } = await nvidiaNimGenerateWithFallback(model, systemPrompt, [{ role: 'user', content: userMessage }], { temperature: options.temperature, max_tokens: options.maxTokens || 4096 });
 
   const wordCount = countWords(aiResponse);
 

@@ -402,3 +402,30 @@ Stage Summary:
 - Users can type story premise, select genre/style, and click to start AI creation
 - Production site updated: https://mojing-story-ai.vercel.app
 - GitHub repo clean of leaked tokens
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: 修复一键创建超时问题 - 更换默认模型+添加自动回退机制
+
+Work Log:
+- 诊断问题：deepseek-v4-pro 当前超时不可用（30s无响应），导致一键创建失败
+- 测试所有NVIDIA NIM模型可用性，确认可用模型列表
+- 实现核心修复：
+  1. 默认模型从 deepseek-v4-pro 改为 qwen3.5-122b（中文原生，稳定快速）
+  2. 新增 nvidiaNimGenerateWithFallback 自动回退函数
+     回退链: qwen3.5-122b → kimi-k2 → llama-3.1-405b → llama-3.3-70b
+  3. 更新所有 AI API 路由使用回退机制(one-click/pipeline/chat/generate)
+  4. 标记 deepseek-v4-pro 为 down 状态
+  5. qwen3.5-122b 移至中文创作推荐分类
+  6. 超时从 60s 优化为 45s（快速失败触发回退）
+  7. store.ts 默认模型同步更新
+- 本地端到端测试确认 Step1(概念) Step2(世界观) 均成功使用 qwen3.5-122b
+- 代码提交推送到GitHub，Vercel自动部署完成
+- 生产环境健康检查确认 defaultModel=qwen3.5-122b
+
+Stage Summary:
+- 修复文件：models.ts, nvidia-nim.ts, store.ts, one-click/route.ts, pipeline/route.ts, chat/route.ts, generate/route.ts
+- 新增功能：nvidiaNimGenerateWithFallback 自动回退机制
+- Vercel部署：https://mojing-story-ai.vercel.app 状态 READY
+- 可用模型：qwen3.5-122b, kimi-k2, llama-3.1-405b, llama-3.3-70b 等10个活跃模型

@@ -151,7 +151,7 @@ export const useAppStore = create<AppState>((set) => ({
   setAiLoading: (loading) => set({ aiLoading: loading }),
   
   // AI Model - default changed to qwen3.5-122b (deepseek-v4-pro & glm-5.1 currently down)
-  selectedModel: 'qwen3.5-122b',
+  selectedModel: 'kimi-k2',
   setSelectedModel: (model) => set({ selectedModel: model }),
   
   // UI State

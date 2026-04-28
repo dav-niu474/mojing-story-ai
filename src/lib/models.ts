@@ -296,17 +296,17 @@ const CODE_REASONING_MODELS: AiModel[] = [
   {
     id: 'qwen3.5-122b',
     nimModelId: 'qwen/qwen3.5-122b-a10b',
-    name: 'Qwen 3.5 122B',
+    name: 'Qwen 3.5 122B ⚠️',
     provider: 'qwen',
     providerLabel: '通义千问',
-    description: '通义千问3.5系列，MoE架构高效推理，中文创作优秀，当前最稳定推荐',
+    description: '通义千问3.5系列，MoE架构高效推理，中文创作优秀（可能暂时不可用）',
     category: '中文创作推荐',
-    tags: ['推荐', 'MoE', '稳定', '中文原生'],
+    tags: ['MoE', '不稳定'],
     contextLength: 128000,
     maxTokens: 8192,
     verified: true,
-    recommended: true,
-    status: 'active',
+    recommended: false,
+    status: 'down',
   },
   {
     id: 'qwen3-next-80b',
@@ -399,23 +399,22 @@ export function getNimModelId(internalId: string): string {
 }
 
 /**
- * Default model ID - changed to qwen3.5-122b
- * because deepseek-v4-pro is currently down (timeout).
- * Qwen 3.5 122B is Chinese-native, fast, and stable.
+ * Default model ID - kimi-k2 as primary (most stable Chinese-native model).
+ * Updated because qwen3.5-122b may be temporarily degraded.
+ * Kimi K2 is Chinese-native, fast, and consistently available.
  *
- * Fallback chain: qwen3.5-122b → kimi-k2 → llama-3.1-405b → llama-3.3-70b
+ * Fallback chain: kimi-k2 → llama-3.3-70b → qwen3.5-122b
  */
-export const DEFAULT_MODEL = 'qwen3.5-122b';
+export const DEFAULT_MODEL = 'kimi-k2';
 
 /**
  * Fallback model chain - if the primary model fails,
  * try these models in order until one works.
  */
 export const FALLBACK_MODELS = [
-  'qwen/qwen3.5-122b-a10b',
   'moonshotai/kimi-k2-instruct',
-  'meta/llama-3.1-405b-instruct',
   'meta/llama-3.3-70b-instruct',
+  'qwen/qwen3.5-122b-a10b',
 ];
 
 /**
